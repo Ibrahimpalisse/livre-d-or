@@ -38,6 +38,7 @@
                 <div class="mb-3">
                     <label for="title" class="form-label">Titre</label>
                     <input type="text" class="form-control" id="title" name="title" required>
+                    <div class="invalid-feedback" id="titleError"></div>
                 </div>
                 <div class="mb-3">
                     <label for="description" class="form-label">Description</label>
@@ -54,10 +55,12 @@
                 <div class="mb-3">
                     <label for="image" class="form-label">Image</label>
                     <input type="file" class="form-control" id="image" name="image" accept="image/*">
+                    <div class="invalid-feedback" id="imageError"></div>
                 </div>
                 <div class="mb-3">
                     <label for="link" class="form-label">Lien pour lire</label>
                     <input type="url" class="form-control" id="link" name="link" placeholder="https://exemple.com/roman" required>
+                    <div class="invalid-feedback" id="linkError"></div>
                 </div>
                 <button type="submit" class="btn btn-primary">Publier</button>
             </form>
@@ -193,4 +196,5 @@
             </div>
         </div>
     </div>
-</div> 
+</div>
+

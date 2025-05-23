@@ -42,7 +42,17 @@
         <p>&copy; <?= date('Y') ?> - Mon site</p>
     </footer>
     <?php if (basename($_SERVER['REQUEST_URI']) === 'dashboard' || strpos($_SERVER['REQUEST_URI'], '/dashboard') !== false): ?>
-    <script src="./public/js/dashboard.js"></script>
+    <script src="/public/js/dashboard.js"></script>
     <?php endif; ?>
+    <?php if (basename($_SERVER['REQUEST_URI']) === 'register' || strpos($_SERVER['REQUEST_URI'], '/register') !== false): ?>
+    <script src="/public/js/register-validate.js"></script>
+    <?php endif; ?>
+    <?php if (basename($_SERVER['REQUEST_URI']) === 'login' || strpos($_SERVER['REQUEST_URI'], '/login') !== false): ?>
+    <script src="/public/js/login-validate.js"></script>
+    <?php endif; ?>
+    <?php if (basename($_SERVER['REQUEST_URI']) === 'dashboard' || strpos($_SERVER['REQUEST_URI'], '/dashboard') !== false): ?>
+    <script src="/public/js/dashboard-validate.js"></script>
+    <?php endif; ?>
+    <script src="/public/js/regx.js"></script>
 </body>
 </html>

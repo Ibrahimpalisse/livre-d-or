@@ -28,4 +28,35 @@ document.addEventListener('DOMContentLoaded', function () {
     createForm.addEventListener('hidden.bs.collapse', function () {
         publicationList.style.display = '';
     });
+
+    // Validation regex pour la recherche de publication
+    var searchForm = document.querySelector('form[action="/dashboard"][method="get"]');
+    if (searchForm) {
+        var searchInput = searchForm.querySelector('input[name="q"]');
+        searchForm.addEventListener('submit', function(e) {
+            if (searchInput && !validateSearch(searchInput.value)) {
+                e.preventDefault();
+            }
+        });
+    }
+
+    // Validation regex pour la recherche utilisateur dans la modal
+    var userSearchForm = document.querySelector('#usersModal form.d-flex');
+    if (userSearchForm) {
+        var userSearchInput = userSearchForm.querySelector('input[type="search"]');
+        userSearchForm.addEventListener('submit', function(e) {
+            if (userSearchInput && !validateSearch(userSearchInput.value)) {
+                e.preventDefault();
+            }
+        });
+        // Si le bouton est de type button, on peut aussi ajouter un click
+        var userSearchBtn = userSearchForm.querySelector('button[type="button"]');
+        if (userSearchBtn) {
+            userSearchBtn.addEventListener('click', function(e) {
+                if (userSearchInput && !validateSearch(userSearchInput.value)) {
+                    e.preventDefault();
+                }
+            });
+        }
+    }
 }); 
