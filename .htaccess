@@ -1,4 +1,22 @@
    RewriteEngine On
+   
+   # Définir le répertoire de base pour les règles de réécriture
+   RewriteBase /
+   
+   # Ne pas appliquer les règles pour les fichiers et répertoires existants
    RewriteCond %{REQUEST_FILENAME} !-f
    RewriteCond %{REQUEST_FILENAME} !-d
-   RewriteRule ^ index.php [QSA,L]
+   
+   # Rediriger toutes les autres requêtes vers index.php
+   RewriteRule ^(.*)$ index.php [QSA,L]
+   
+   # PHP settings
+   <IfModule mod_php7.c>
+       php_flag display_errors On
+       php_value error_reporting E_ALL
+   </IfModule>
+   
+   <IfModule mod_php8.c>
+       php_flag display_errors On
+       php_value error_reporting E_ALL
+   </IfModule>

@@ -41,3 +41,4 @@ public function getValidationStats($publicationId)
         'total' => $total
     ];
 } 
+ 

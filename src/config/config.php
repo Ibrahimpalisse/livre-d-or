@@ -7,10 +7,8 @@
 require_once dirname(__DIR__) . '/core/Env.php';
 Core\Env::load();
 
-// Fonction pour récupérer une variable d'environnement avec une valeur par défaut
-function env($key, $default = null) {
-    return Core\Env::get($key, $default);
-}
+// Inclure les fonctions d'aide globales
+require_once dirname(__DIR__) . '/core/helpers.php';
 
 return [
     // Configuration JWT

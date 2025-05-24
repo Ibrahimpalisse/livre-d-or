@@ -2,6 +2,19 @@
 // Démarrer la session
 session_start();
 
+// Activer l'affichage des erreurs pour le débogage
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+// Journalisation
+error_log("Début de l'exécution de index.php - REQUEST_URI: " . $_SERVER['REQUEST_URI']);
+
+// Vérifier si mod_rewrite fonctionne correctement
+if (!isset($_SERVER['REDIRECT_URL']) && $_SERVER['REQUEST_URI'] != '/' && $_SERVER['REQUEST_URI'] != '/index.php') {
+    error_log("ATTENTION: mod_rewrite ne semble pas fonctionner! REQUEST_URI: " . $_SERVER['REQUEST_URI']);
+}
+
 require 'vendor/autoload.php';
 
 use Core\Router;
@@ -401,4 +414,4 @@ $router->add('/publication/stats', function() {
     ]);
 });
 
-$router->dispatch($_SERVER['REQUEST_URI']);
+$router->run();

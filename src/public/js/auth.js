@@ -23,3 +23,4 @@ function clearCache() {
     // Empêcher la navigation par défaut du lien
     return false;
 } 
+ 

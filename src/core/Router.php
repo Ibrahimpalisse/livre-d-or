@@ -14,7 +14,9 @@ class Router
     public function __construct()
     {
         $this->authController = new AuthController();
-        session_start();
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
     }
 
     /**
@@ -60,12 +62,29 @@ class Router
      */
     private function matchRoute($route, $path)
     {
+
+        // Traitement spécial pour la racine
+        if ($route === '/' && ($path === '/' || $path === '')) {
+            error_log("matchRoute: Route racine trouvée");
+            return [];
+        }
+        
         // Supprimer les trailing slashes
         $route = rtrim($route, '/');
         $path = rtrim($path, '/');
         
+        // Si les deux sont vides après le rtrim, c'est la racine
+        if ($route === '' && $path === '') {
+            error_log("matchRoute: Route racine trouvée (après rtrim)");
+            return [];
+        }
+        
+        // Débogage
+        error_log("matchRoute: Vérification route='{$route}' avec path='{$path}'");
+        
         // Vérifier les routes exactes
         if ($route === $path) {
+            error_log("matchRoute: Route exacte trouvée: {$route} == {$path}");
             return [];
         }
         
@@ -73,7 +92,18 @@ class Router
         $routeParts = explode('/', $route);
         $pathParts = explode('/', $path);
         
+        // Ignorer les segments vides au début (résultat d'un slash initial)
+        if (count($routeParts) > 0 && $routeParts[0] === '') {
+            array_shift($routeParts);
+        }
+        if (count($pathParts) > 0 && $pathParts[0] === '') {
+            array_shift($pathParts);
+        }
+        
+        error_log("matchRoute: routeParts=" . implode(",", $routeParts) . " pathParts=" . implode(",", $pathParts));
+        
         if (count($routeParts) !== count($pathParts)) {
+            error_log("matchRoute: Nombre de segments différent - route:" . count($routeParts) . ", path:" . count($pathParts));
             return false;
         }
         
@@ -82,11 +112,14 @@ class Router
             // Si c'est un paramètre {param}
             if (preg_match('/^{([a-z_]+)}$/', $routeParts[$i], $matches)) {
                 $params[$matches[1]] = $pathParts[$i];
+                error_log("matchRoute: Paramètre trouvé - {$matches[1]} = {$pathParts[$i]}");
             } elseif ($routeParts[$i] !== $pathParts[$i]) {
+                error_log("matchRoute: Segment non correspondant - route:{$routeParts[$i]}, path:{$pathParts[$i]}");
                 return false;
             }
         }
         
+        error_log("matchRoute: Route avec paramètres trouvée - route:{$route}, path:{$path}");
         return $params;
     }
 
@@ -97,10 +130,33 @@ class Router
      */
     public function run()
     {
+        // Obtenir le chemin à partir de l'URL
         $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
         
+        // Normaliser le chemin
+        // - Supprimer les barres obliques multiples
+        $path = preg_replace('#/+#', '/', $path);
+        // - Supprimer les barres obliques de fin
+        $path = rtrim($path, '/');
+        // - Traiter le cas de la racine
+        if ($path === '') {
+            $path = '/';
+        }
+        
+        // Débogage - Log l'URL actuelle
+        error_log("Router: Requête pour l'URL: " . $path);
+        error_log("Router: Routes disponibles: " . implode(', ', array_keys($this->routes)));
+        
+        // Vérifier chaque route
         foreach ($this->routes as $route => $data) {
-            if ($params = $this->matchRoute($route, $path)) {
+            // Débogage - Vérifier chaque route
+            error_log("Router: Vérification de la route: " . $route);
+            
+            $params = $this->matchRoute($route, $path);
+            if ($params !== false) {
+                // Débogage - Route trouvée
+                error_log("Router: Route trouvée: " . $route);
+                
                 $callback = $data['callback'];
                 $options = $data['options'];
 
@@ -144,6 +200,7 @@ class Router
 
                     if (!$access['authenticated']) {
                         // Rediriger vers la page de connexion
+                        error_log("Router: Redirection vers /login - Utilisateur non authentifié");
                         header('Location: /login');
                         exit;
                     }
@@ -159,10 +216,12 @@ class Router
                         
                         if ($user && $user['role'] === User::ROLE_USER) {
                             // Rediriger les utilisateurs standards vers la page d'accueil
+                            error_log("Router: Redirection vers /home - Utilisateur standard");
                             header('Location: /home');
                             exit;
                         } else {
                             // Pour d'autres cas (rare), afficher une erreur 403
+                            error_log("Router: Affichage erreur 403 - Accès refusé");
                             http_response_code(403);
                             $this->render('error', [
                                 'title' => 'Accès refusé',
@@ -174,12 +233,14 @@ class Router
                 }
 
                 // Exécuter le callback de la route
+                error_log("Router: Exécution du callback pour la route: " . $route);
                 call_user_func_array($callback, $params);
                 return;
             }
         }
         
         // Route non trouvée - erreur 404
+        error_log("Router: Aucune route trouvée pour: " . $path);
         http_response_code(404);
         $this->render('error', [
             'title' => 'Page non trouvée',

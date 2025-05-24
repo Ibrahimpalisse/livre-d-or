@@ -222,3 +222,61 @@ if (isset($user) && $user['role'] === 'user') {
     </div>
 </div>
 
+<!-- Modal pour éditer une publication -->
+<div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="editModalLabel">Modifier la publication</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+      </div>
+      <div class="modal-body">
+        <form id="editForm" method="post" enctype="multipart/form-data">
+          <input type="hidden" id="edit_id" name="id">
+          
+          <div class="mb-3">
+            <label for="edit_title" class="form-label">Titre</label>
+            <input type="text" class="form-control" id="edit_title" name="title" required>
+            <div class="invalid-feedback" id="edit_titleError"></div>
+          </div>
+          
+          <div class="mb-3">
+            <label for="edit_description" class="form-label">Description</label>
+            <textarea class="form-control" id="edit_description" name="description" rows="3" required></textarea>
+          </div>
+          
+          <div class="mb-3">
+            <label for="edit_type" class="form-label">Type</label>
+            <select class="form-select" id="edit_type" name="type">
+              <option value="roman">Roman</option>
+              <option value="manhwa">Manhwa</option>
+              <option value="anime">Animé</option>
+            </select>
+          </div>
+          
+          <div class="mb-3">
+            <label for="edit_image" class="form-label">Image (optionnelle)</label>
+            <div id="edit_image_preview" class="mb-2"></div>
+            <input type="file" class="form-control" id="edit_image" name="image" accept="image/*">
+            <div class="invalid-feedback" id="edit_imageError"></div>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label">Liens</label>
+            <div id="edit_links_container">
+              <!-- Les liens seront ajoutés ici dynamiquement -->
+            </div>
+            <button type="button" class="btn btn-outline-secondary mt-2" id="edit_add_link_btn">
+              <i class="bi bi-plus-circle"></i> Ajouter un lien
+            </button>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+        <button type="button" class="btn btn-primary" id="saveEditBtn">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+</div>
+

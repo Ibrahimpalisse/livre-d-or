@@ -128,11 +128,19 @@ document.addEventListener('DOMContentLoaded', function() {
         const alertDiv = document.createElement('div');
         alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed bottom-0 end-0 m-3`;
         alertDiv.setAttribute('role', 'alert');
-        alertDiv.innerHTML = `
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        `;
         
+        // Créer le contenu de l'alerte avec DOM au lieu de innerHTML
+        const messageText = document.createTextNode(message);
+        alertDiv.appendChild(messageText);
+        
+        // Créer le bouton de fermeture
+        const closeButton = document.createElement('button');
+        closeButton.className = 'btn-close';
+        closeButton.setAttribute('type', 'button');
+        closeButton.setAttribute('data-bs-dismiss', 'alert');
+        closeButton.setAttribute('aria-label', 'Close');
+        
+        alertDiv.appendChild(closeButton);
         document.body.appendChild(alertDiv);
         
         // Supprimer l'alerte après 3 secondes
@@ -272,11 +280,19 @@ document.addEventListener('DOMContentLoaded', function() {
         const alertDiv = document.createElement('div');
         alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed bottom-0 end-0 m-3`;
         alertDiv.setAttribute('role', 'alert');
-        alertDiv.innerHTML = `
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        `;
         
+        // Créer le contenu de l'alerte avec DOM au lieu de innerHTML
+        const messageText = document.createTextNode(message);
+        alertDiv.appendChild(messageText);
+        
+        // Créer le bouton de fermeture
+        const closeButton = document.createElement('button');
+        closeButton.className = 'btn-close';
+        closeButton.setAttribute('type', 'button');
+        closeButton.setAttribute('data-bs-dismiss', 'alert');
+        closeButton.setAttribute('aria-label', 'Close');
+        
+        alertDiv.appendChild(closeButton);
         document.body.appendChild(alertDiv);
         
         // Supprimer l'alerte après 3 secondes
@@ -417,11 +433,19 @@ document.addEventListener('DOMContentLoaded', function() {
         const alertDiv = document.createElement('div');
         alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed bottom-0 end-0 m-3`;
         alertDiv.setAttribute('role', 'alert');
-        alertDiv.innerHTML = `
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        `;
         
+        // Créer le contenu de l'alerte avec DOM au lieu de innerHTML
+        const messageText = document.createTextNode(message);
+        alertDiv.appendChild(messageText);
+        
+        // Créer le bouton de fermeture
+        const closeButton = document.createElement('button');
+        closeButton.className = 'btn-close';
+        closeButton.setAttribute('type', 'button');
+        closeButton.setAttribute('data-bs-dismiss', 'alert');
+        closeButton.setAttribute('aria-label', 'Close');
+        
+        alertDiv.appendChild(closeButton);
         document.body.appendChild(alertDiv);
         
         // Supprimer l'alerte après 3 secondes

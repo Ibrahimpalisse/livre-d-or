@@ -8,6 +8,9 @@
         "Core\\": "src/core/",
         "Models\\": "src/models/",
         "Controllers\\": "src/controllers/"
-    }
+    },
+    "files": [
+        "src/core/helpers.php"
+    ]
 }
 }

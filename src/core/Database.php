@@ -54,3 +54,4 @@ class Database {
         return $this->db->$collection;
     }
 } 
+ 

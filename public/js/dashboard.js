@@ -1,4 +1,110 @@
 document.addEventListener('DOMContentLoaded', function () {
+    /**
+     * Affiche une alerte bootstrap
+     * @param {string} type Type d'alerte (success, danger, warning, info)
+     * @param {string} message Message à afficher
+     */
+    function showAlert(type, message) {
+        // Supprimer les alertes existantes
+        const existingAlerts = document.querySelectorAll('.alert');
+        existingAlerts.forEach(alert => alert.remove());
+        
+        // Créer une nouvelle alerte
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show mt-3`;
+        alertDiv.role = 'alert';
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        `;
+        
+        // Insérer l'alerte au début du contenu principal
+        const mainContent = document.querySelector('main.container');
+        if (mainContent && mainContent.firstChild) {
+            mainContent.insertBefore(alertDiv, mainContent.firstChild);
+        }
+        
+        // Faire disparaître l'alerte après 5 secondes
+        setTimeout(() => {
+            alertDiv.classList.remove('show');
+            setTimeout(() => alertDiv.remove(), 150);
+        }, 5000);
+    }
+    
+    // Gestion du bouton d'ajout de lien dans le formulaire d'édition
+    const editAddLinkBtn = document.getElementById('edit_add_link_btn');
+    const editLinksContainer = document.getElementById('edit_links_container');
+    
+    if (editAddLinkBtn && editLinksContainer) {
+        editAddLinkBtn.addEventListener('click', function() {
+            const linkGroup = document.createElement('div');
+            linkGroup.className = 'input-group mb-2';
+            linkGroup.innerHTML = `
+                <input type="url" class="form-control" name="edit_links[]" placeholder="https://exemple.com">
+                <button type="button" class="btn btn-outline-danger remove-link">Supprimer</button>
+            `;
+            editLinksContainer.appendChild(linkGroup);
+            
+            linkGroup.querySelector('.remove-link').addEventListener('click', function() {
+                linkGroup.remove();
+            });
+        });
+    }
+    
+    // Gestion du bouton de sauvegarde pour le formulaire d'édition
+    const saveEditBtn = document.getElementById('saveEditBtn');
+    if (saveEditBtn) {
+        saveEditBtn.addEventListener('click', function() {
+            const editForm = document.getElementById('editForm');
+            if (!editForm) return;
+            
+            const formData = new FormData(editForm);
+            
+            // Désactiver le bouton pendant le traitement
+            saveEditBtn.disabled = true;
+            saveEditBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Traitement en cours...';
+            
+            fetch('/publication/update', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Réactiver le bouton
+                saveEditBtn.disabled = false;
+                saveEditBtn.textContent = 'Enregistrer';
+                
+                if (data.success) {
+                    // Fermer la modale
+                    const editModal = document.getElementById('editModal');
+                    if (editModal) {
+                        const bsModal = bootstrap.Modal.getInstance(editModal);
+                        bsModal.hide();
+                    }
+                    
+                    // Afficher un message de succès
+                    showAlert('success', data.message || 'Publication mise à jour avec succès.');
+                    
+                    // Recharger les publications
+                    loadPublications();
+                } else {
+                    showAlert('danger', data.message || 'Erreur lors de la mise à jour de la publication.');
+                }
+            })
+            .catch(error => {
+                // Réactiver le bouton en cas d'erreur
+                saveEditBtn.disabled = false;
+                saveEditBtn.textContent = 'Enregistrer';
+                
+                console.error('Erreur:', error);
+                showAlert('danger', 'Une erreur est survenue lors de la mise à jour de la publication.');
+            });
+        });
+    }
+    
     var createForm = document.getElementById('createForm');
     var publicationList = document.getElementById('publicationList');
     var createBtn = document.querySelector('[data-bs-target="#createForm"]');
@@ -390,47 +496,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 linkBtn.removeAttribute('href');
                 linkBtn.addEventListener('click', function(e) {
                     e.preventDefault();
-                    console.log("DEBUG - Click sur bouton Consulter");
-                    console.log("DEBUG - linksModalBody existe:", document.getElementById('linksModalBody') !== null);
-                    console.log("DEBUG - linksModal existe:", document.getElementById('linksModal') !== null);
-                    
-                    if (Array.isArray(publication.links) && publication.links.length > 0) {
-                        let html = '<ul class="list-group">';
-                        publication.links.forEach((l, idx) => {
-                            html += `<li class="list-group-item"><a href="${l}" target="_blank" rel="noopener">${l}</a></li>`;
-                        });
-                        html += '</ul>';
-                        
-                        const linksModalBody = document.getElementById('linksModalBody');
-                        if (linksModalBody) {
-                            linksModalBody.innerHTML = html;
-                        } else {
-                            console.error("DEBUG - linksModalBody est null");
-                            // Fallback: ouvrir le premier lien en nouvelle fenêtre
-                            window.open(publication.links[0], '_blank');
-                            return;
-                        }
-                    } else {
-                        const linksModalBody = document.getElementById('linksModalBody');
-                        if (linksModalBody) {
-                            linksModalBody.innerHTML = '<div class="alert alert-warning">Aucun lien disponible.</div>';
-                        } else {
-                            console.error("DEBUG - linksModalBody est null");
-                            return;
-                        }
-                    }
-                    
-                    const linksModal = document.getElementById('linksModal');
-                    if (linksModal) {
-                        try {
-                            const modal = new bootstrap.Modal(linksModal);
-                            modal.show();
-                        } catch (error) {
-                            console.error("DEBUG - Erreur lors de l'ouverture de la modale:", error);
-                        }
-                    } else {
-                        console.error("DEBUG - linksModal est null");
-                    }
+                    openLinksModal(publication);
                 });
                 
                 // Ajouter les attributs data pour les actions
@@ -485,145 +551,40 @@ document.addEventListener('DOMContentLoaded', function () {
      * @param {string} id ID de la publication
      */
     function openEditModal(id) {
-        console.log('DEBUG - openEditModal appelé avec id:', id);
+        // Vérifier si l'ID est valide
+        if (!id) {
+            // Silencieux en production
+            return;
+        }
         
-        // Récupérer les détails de la publication
-        fetch(`/publication/get?id=${id}`, {
-            method: 'GET',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(async response => {
-            const text = await response.text();
-            console.log('Réponse brute:', text);
-            try {
-                return JSON.parse(text);
-            } catch (e) {
-                alert('Réponse inattendue du serveur (voir console)');
-                console.error('Réponse serveur:', text);
-                throw e;
-            }
-        })
-        .then(data => {
-            if (data.success) {
-                const publication = data.publication;
-                
-                // Déboguer les éléments du DOM
-                console.log('DEBUG - createForm existe:', document.getElementById('createForm') !== null);
-                console.log('DEBUG - title existe:', document.getElementById('title') !== null);
-                console.log('DEBUG - description existe:', document.getElementById('description') !== null);
-                console.log('DEBUG - linksContainer existe:', document.getElementById('linksContainer') !== null);
-                console.log('DEBUG - additionalLinks existe:', document.getElementById('additionalLinks') !== null);
-                
-                const createForm = document.getElementById('createForm');
-                if (!createForm) {
-                    console.error('DEBUG - createForm est null');
-                    alert("Erreur: Le formulaire d'édition est introuvable.");
+        // Récupérer les données de la publication
+        fetch(`/publication/get?id=${id}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Erreur HTTP: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (!data.success || !data.publication) {
+                    showAlert('danger', data.message || 'Publication non trouvée.');
                     return;
                 }
                 
-                // Afficher le formulaire via Bootstrap Collapse
-                const bsCollapse = bootstrap.Collapse.getOrCreateInstance(createForm, {toggle: false});
-                bsCollapse.show();
-                
-                // Cacher la liste
-                document.getElementById('publicationList').style.display = 'none';
-                
                 // Remplir le formulaire avec les données de la publication
-                document.getElementById('title').value = publication.title;
-                document.getElementById('description').value = publication.description;
+                const publication = data.publication;
+                populateEditForm(publication);
                 
-                // Sélectionner le bon type par bouton radio
-                const typeRadio = document.getElementById('type' + publication.type.charAt(0).toUpperCase() + publication.type.slice(1));
-                if (typeRadio) {
-                    typeRadio.checked = true;
+                // Afficher la modale
+                const editModal = document.getElementById('editModal');
+                if (editModal) {
+                    const bsModal = new bootstrap.Modal(editModal);
+                    bsModal.show();
                 }
-                
-                // Gérer les liens multiples dans le formulaire
-                const linksContainer = document.getElementById('linksContainer');
-                const additionalLinks = document.getElementById('additionalLinks');
-                const firstLinkInput = linksContainer.querySelector('input[name="links[]"]');
-                firstLinkInput.value = '';
-                additionalLinks.innerHTML = '';
-                if (Array.isArray(publication.links) && publication.links.length > 0) {
-                    // Premier lien dans le premier champ
-                    firstLinkInput.value = publication.links[0] || '';
-                    // Les autres liens dans des champs supplémentaires
-                    for (let i = 1; i < publication.links.length; i++) {
-                        const div = document.createElement('div');
-                        div.className = 'input-group mb-2';
-                        div.innerHTML = `
-                            <input type="url" class="form-control" name="links[]" placeholder="https://exemple.com/roman" required value="${publication.links[i]}">
-                            <button class="btn btn-outline-danger remove-link-btn" type="button">Supprimer</button>
-                        `;
-                        additionalLinks.appendChild(div);
-                        div.querySelector('.remove-link-btn').addEventListener('click', function() {
-                            div.remove();
-                        });
-                    }
-                } else {
-                    firstLinkInput.value = '';
-                }
-                
-                // Ajouter un aperçu de l'image si elle existe
-                const imageContainer = document.querySelector('.mb-3:has(#image)');
-                if (imageContainer && publication.image_path) {
-                    // Supprimer l'aperçu existant s'il y en a un
-                    const existingPreview = imageContainer.querySelector('.image-preview');
-                    if (existingPreview) {
-                        existingPreview.remove();
-                    }
-                    
-                    // Créer un nouvel aperçu
-                    const preview = document.createElement('div');
-                    preview.className = 'image-preview mb-2';
-                    preview.innerHTML = `
-                        <img src="${publication.image_path}" alt="${publication.title}" class="img-thumbnail" style="max-height: 150px;">
-                        <p class="text-muted small mt-1">Image actuelle. Téléchargez une nouvelle image pour la remplacer.</p>
-                    `;
-                    
-                    // Insérer avant l'input de fichier
-                    imageContainer.insertBefore(preview, imageContainer.querySelector('#image'));
-                }
-                
-                // Changer le texte du bouton et l'action du formulaire
-                const submitBtn = createForm.querySelector('button[type="submit"]');
-                submitBtn.textContent = 'Mettre à jour';
-                submitBtn.dataset.mode = 'update';
-                submitBtn.dataset.id = publication.id;
-                
-                // Ajouter un bouton d'annulation
-                if (!createForm.querySelector('.btn-cancel')) {
-                    const cancelBtn = document.createElement('button');
-                    cancelBtn.type = 'button';
-                    cancelBtn.className = 'btn btn-secondary me-2 btn-cancel';
-                    cancelBtn.textContent = 'Annuler';
-                    cancelBtn.addEventListener('click', function() {
-                        resetCreateForm();
-                        document.getElementById('publicationList').style.display = '';
-                        bsCollapse.hide();
-                    });
-                    
-                    submitBtn.parentNode.insertBefore(cancelBtn, submitBtn);
-                }
-                
-                // Changer le titre du formulaire
-                const formTitle = createForm.querySelector('h5');
-                if (formTitle) {
-                    formTitle.textContent = 'Modifier la publication';
-                }
-                
-                // Faire défiler jusqu'au formulaire
-                createForm.scrollIntoView({ behavior: 'smooth' });
-            } else {
-                alert('Erreur: ' + data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Erreur:', error);
-            alert('Une erreur est survenue lors de la récupération des détails de la publication');
-        });
+            })
+            .catch(error => {
+                showAlert('danger', 'Erreur lors de la récupération des données: ' + error.message);
+            });
     }
     
     /**
@@ -631,39 +592,46 @@ document.addEventListener('DOMContentLoaded', function () {
      * @param {string} id ID de la publication
      */
     function deletePublication(id) {
-        console.log('[DEBUG] deletePublication appelé avec id:', id);
+        if (!id) {
+            showAlert('danger', 'ID de publication manquant.');
+            return;
+        }
         
-        // Suppression du confirm() ici car nous utilisons maintenant la modale
-        
+        // Créer les données du formulaire
         const formData = new FormData();
         formData.append('id', id);
-        console.log('[DEBUG] Envoi requête fetch POST /publication/delete avec id:', id);
+        
+        // Envoi de la requête
         fetch('/publication/delete', {
             method: 'POST',
-            body: formData,
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
+            body: formData
         })
         .then(response => {
-            console.log('[DEBUG] Réponse reçue de /publication/delete');
+            if (!response.ok) {
+                throw new Error(`Erreur HTTP: ${response.status}`);
+            }
             return response.json();
         })
         .then(data => {
-            console.log('[DEBUG] Réponse JSON:', data);
             if (data.success) {
-                alert(data.message);
+                showAlert('success', data.message || 'Publication supprimée avec succès.');
                 
-                // Forcer un rechargement complet au lieu de loadPublications() 
-                // pour éviter les problèmes sur certains navigateurs
-                window.location.reload();
+                // Supprimer la publication de la liste
+                const publicationCard = document.getElementById(`publication-${id}`);
+                if (publicationCard) {
+                    publicationCard.remove();
+                } else {
+                    // Si on ne trouve pas la carte, recharger la page
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                }
             } else {
-                alert('Erreur: ' + data.message);
+                showAlert('danger', data.message || 'Erreur lors de la suppression de la publication.');
             }
         })
         .catch(error => {
-            console.error('[DEBUG] Erreur dans fetch /publication/delete:', error);
-            alert('Une erreur est survenue lors de la suppression de la publication');
+            showAlert('danger', 'Erreur lors de la suppression: ' + error.message);
         });
     }
     
@@ -817,4 +785,117 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         });
     }
-}); 
+
+    // Fonctions pour la gestion des liens dans la modale
+    function openLinksModal(publication) {
+        const linksModalBody = document.getElementById('linksModalBody');
+        const linksModal = document.getElementById('linksModal');
+        
+        if (!linksModalBody || !linksModal) {
+            // Silencieux en production
+            return;
+        }
+        
+        // Récupérer les liens
+        const links = publication.links || [];
+        
+        // Construire le contenu de la modale
+        let content = '';
+        if (links.length > 0) {
+            content += `<h6 class="mb-3">${links.length} lien(s) disponible(s):</h6>`;
+            content += '<ul class="list-group">';
+            links.forEach((link, index) => {
+                content += `
+                    <li class="list-group-item">
+                        <span class="badge bg-primary me-2">${index + 1}</span>
+                        <a href="${link}" target="_blank" rel="noopener" class="text-break">${link}</a>
+                    </li>
+                `;
+            });
+            content += '</ul>';
+        } else {
+            content = '<div class="alert alert-warning">Aucun lien disponible pour cette publication.</div>';
+        }
+        
+        // Mettre à jour le contenu de la modale
+        linksModalBody.innerHTML = content;
+        
+        // Afficher la modale
+        const bsModal = new bootstrap.Modal(linksModal);
+        bsModal.show();
+    }
+
+    // Fonction pour pré-remplir le formulaire d'édition
+    function populateEditForm(publication) {
+        // Code à implémenter en fonction de votre interface
+        const editForm = document.getElementById('editForm');
+        
+        if (!editForm) {
+            showAlert('danger', 'Formulaire d\'édition introuvable.');
+            return;
+        }
+        
+        // Remplir les champs du formulaire avec les données de la publication
+        const titleInput = editForm.querySelector('#edit_title');
+        const descriptionInput = editForm.querySelector('#edit_description');
+        const typeSelect = editForm.querySelector('#edit_type');
+        
+        if (titleInput) titleInput.value = publication.title || '';
+        if (descriptionInput) descriptionInput.value = publication.description || '';
+        if (typeSelect) typeSelect.value = publication.type || 'roman';
+        
+        // Gérer les liens
+        const linksContainer = editForm.querySelector('#edit_links_container');
+        if (linksContainer) {
+            linksContainer.innerHTML = '';
+            
+            if (Array.isArray(publication.links) && publication.links.length > 0) {
+                publication.links.forEach((link, index) => {
+                    const linkGroup = document.createElement('div');
+                    linkGroup.className = 'input-group mb-2';
+                    linkGroup.innerHTML = `
+                        <input type="url" class="form-control" name="edit_links[]" value="${link}" placeholder="https://exemple.com">
+                        <button type="button" class="btn btn-outline-danger remove-link">Supprimer</button>
+                    `;
+                    linksContainer.appendChild(linkGroup);
+                    
+                    // Ajouter l'événement pour supprimer le lien
+                    linkGroup.querySelector('.remove-link').addEventListener('click', function() {
+                        linkGroup.remove();
+                    });
+                });
+            } else {
+                // Ajouter un champ vide par défaut
+                const linkGroup = document.createElement('div');
+                linkGroup.className = 'input-group mb-2';
+                linkGroup.innerHTML = `
+                    <input type="url" class="form-control" name="edit_links[]" placeholder="https://exemple.com">
+                    <button type="button" class="btn btn-outline-danger remove-link">Supprimer</button>
+                `;
+                linksContainer.appendChild(linkGroup);
+                
+                // Ajouter l'événement pour supprimer le lien
+                linkGroup.querySelector('.remove-link').addEventListener('click', function() {
+                    linkGroup.remove();
+                });
+            }
+        }
+        
+        // Stocker l'ID de la publication dans un champ caché
+        const idInput = editForm.querySelector('#edit_id');
+        if (idInput) idInput.value = publication.id;
+        
+        // Afficher l'image actuelle si elle existe
+        const imagePreview = editForm.querySelector('#edit_image_preview');
+        if (imagePreview && publication.image_path) {
+            imagePreview.innerHTML = `
+                <img src="${publication.image_path}" alt="${publication.title}" class="img-thumbnail" style="max-height: 150px;">
+                <p class="text-muted small mt-1">Image actuelle. Téléchargez une nouvelle image pour la remplacer.</p>
+            `;
+            imagePreview.style.display = 'block';
+        } else if (imagePreview) {
+            imagePreview.innerHTML = '';
+            imagePreview.style.display = 'none';
+        }
+    }
+});

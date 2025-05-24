@@ -1,4 +1,3 @@
-console.log('login-validate.js chargé');
 // Alerte supprimée car plus nécessaire
 
 // Ajouter un style pour s'assurer que .invalid-feedback s'affiche
@@ -23,8 +22,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function showValidation(input, isValid, message) {
     const errorElement = document.getElementById(input.id + 'Error');
-    console.log('showValidation', input, isValid, message);
-    console.log('errorElement', errorElement);
     if (!errorElement) return;
     
     if (isValid) {

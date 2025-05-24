@@ -586,19 +586,25 @@ document.addEventListener('DOMContentLoaded', function () {
             commentForm.onsubmit = function(e) {
                 e.preventDefault();
                 const content = document.getElementById('commentContent').value.trim();
-                
                 if (content) {
                     submitButton.disabled = true;
-                    submitButton.innerHTML = `
-                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                        Envoi...
-                    `;
-                    
+                    submitButton.textContent = '';
+                    const spinner = document.createElement('span');
+                    spinner.className = 'spinner-border spinner-border-sm';
+                    spinner.setAttribute('role', 'status');
+                    spinner.setAttribute('aria-hidden', 'true');
+                    submitButton.appendChild(spinner);
+                    submitButton.appendChild(document.createTextNode(' Envoi...'));
                     submitComment(publication.id, content, function() {
-                        document.getElementById('commentContent').value = '';
-                        submitButton.disabled = false;
-                        submitButton.innerHTML = 'Publier';
-                        loadComments(publication.id); // Recharger les commentaires
+                        // Toujours rechercher le bouton par son ID (au cas où le DOM a changé)
+                        const btn = document.getElementById('submitComment');
+                        if (btn) {
+                            btn.disabled = false;
+                            btn.textContent = 'Publier';
+                        }
+                        const textarea = document.getElementById('commentContent');
+                        if (textarea) textarea.value = '';
+                        loadComments(publication.id);
                     });
                 }
             };
@@ -611,19 +617,20 @@ document.addEventListener('DOMContentLoaded', function () {
     // Fonction pour charger les commentaires
     function loadComments(publicationId) {
         const commentsList = document.getElementById('commentsList');
-        
         if (!commentsList) return;
-        
         // Afficher le spinner de chargement
-        commentsList.innerHTML = `
-            <div class="text-center">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">Chargement des commentaires...</span>
-                </div>
-            </div>
-        `;
-        
-        // Charger les commentaires avec la nouvelle route
+        commentsList.textContent = '';
+        const spinner = document.createElement('div');
+        spinner.className = 'text-center';
+        const spinnerInner = document.createElement('div');
+        spinnerInner.className = 'spinner-border text-primary';
+        spinnerInner.setAttribute('role', 'status');
+        const span = document.createElement('span');
+        span.className = 'visually-hidden';
+        span.textContent = 'Chargement des commentaires...';
+        spinnerInner.appendChild(span);
+        spinner.appendChild(spinnerInner);
+        commentsList.appendChild(spinner);
         fetch(`/comments/by-publication?id=${publicationId}`)
             .then(response => {
                 if (!response.ok) {
@@ -632,41 +639,47 @@ document.addEventListener('DOMContentLoaded', function () {
                 return response.json();
             })
             .then(data => {
+                commentsList.textContent = '';
                 if (data.success && data.comments.length > 0) {
-                    let html = '';
-                    
                     // Trier les commentaires du plus récent au plus ancien
                     data.comments.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-                    
                     data.comments.forEach(comment => {
-                        html += `
-                            <div class="card mb-3" id="comment-${comment.id}">
-                                <div class="card-body">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <h6 class="card-subtitle mb-2 text-muted">${comment.username}</h6>
-                                        <small class="text-success fw-bold">${formatDateTime(comment.created_at)}</small>
-                                    </div>
-                                    <p class="card-text">${comment.content}</p>
-                                </div>
-                            </div>
-                        `;
+                        const card = document.createElement('div');
+                        card.className = 'card mb-3';
+                        card.id = `comment-${comment.id}`;
+                        const cardBody = document.createElement('div');
+                        cardBody.className = 'card-body';
+                        const header = document.createElement('div');
+                        header.className = 'd-flex justify-content-between align-items-center';
+                        const user = document.createElement('h6');
+                        user.className = 'card-subtitle mb-2 text-muted';
+                        user.textContent = comment.username;
+                        const date = document.createElement('small');
+                        date.className = 'text-success fw-bold';
+                        date.textContent = formatDateTime(comment.created_at);
+                        header.appendChild(user);
+                        header.appendChild(date);
+                        const content = document.createElement('p');
+                        content.className = 'card-text';
+                        content.textContent = comment.content;
+                        cardBody.appendChild(header);
+                        cardBody.appendChild(content);
+                        card.appendChild(cardBody);
+                        commentsList.appendChild(card);
                     });
-                    
-                    commentsList.innerHTML = html;
                 } else {
-                    commentsList.innerHTML = `
-                        <div class="alert alert-info">
-                            Aucun commentaire pour le moment. Soyez le premier à commenter !
-                        </div>
-                    `;
+                    const alert = document.createElement('div');
+                    alert.className = 'alert alert-info';
+                    alert.textContent = 'Aucun commentaire pour le moment. Soyez le premier à commenter !';
+                    commentsList.appendChild(alert);
                 }
             })
             .catch(error => {
-                commentsList.innerHTML = `
-                    <div class="alert alert-danger">
-                        Une erreur est survenue lors du chargement des commentaires.
-                    </div>
-                `;
+                commentsList.textContent = '';
+                const alert = document.createElement('div');
+                alert.className = 'alert alert-danger';
+                alert.textContent = 'Une erreur est survenue lors du chargement des commentaires.';
+                commentsList.appendChild(alert);
             });
     }
     
@@ -704,7 +717,6 @@ document.addEventListener('DOMContentLoaded', function () {
             if (data.success) {
                 // Commentaire ajouté avec succès
                 if (callback) callback();
-                
                 // Mettre à jour les statistiques pour cette publication
                 loadCommentStats(publicationId);
             } else {
@@ -722,7 +734,7 @@ document.addEventListener('DOMContentLoaded', function () {
             } else {
                 alert(error.message || 'Une erreur est survenue lors de l\'ajout du commentaire.');
             }
-            
+            // Toujours appeler le callback, même en cas d'erreur
             if (callback) callback();
         });
     }
@@ -1056,33 +1068,47 @@ document.addEventListener('DOMContentLoaded', function () {
     // Fonction pour créer une modale
     function createModal(id, title, content) {
         let modal = document.getElementById(id);
-        
         if (!modal) {
             modal = document.createElement('div');
             modal.className = 'modal fade';
             modal.id = id;
             modal.tabIndex = '-1';
-            
+            // Structure statique de la modale
             modal.innerHTML = `
                 <div class="modal-dialog modal-dialog-centered">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h5 class="modal-title">${title}</h5>
+                            <h5 class="modal-title"></h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
                         </div>
-                        <div class="modal-body" id="${id}Body">
-                            ${content}
-                        </div>
+                        <div class="modal-body" id="${id}Body"></div>
                     </div>
                 </div>
             `;
-            
             document.body.appendChild(modal);
-        } else {
-            modal.querySelector('.modal-title').textContent = title;
-            document.getElementById(`${id}Body`).innerHTML = content;
         }
-        
+        // Met à jour le titre
+        modal.querySelector('.modal-title').textContent = title;
+        // Met à jour le contenu du corps
+        const body = document.getElementById(`${id}Body`);
+        if (typeof content === 'string') {
+            // Si le contenu est du HTML complexe, on utilise innerHTML (ex: listes de liens, etc.)
+            body.innerHTML = content;
+        } else if (content instanceof Node) {
+            body.textContent = '';
+            body.appendChild(content);
+        } else {
+            body.textContent = content;
+        }
         return modal;
     }
+    
+    // Fonction de secours pour les anciens appels à showToast
+    function showToast(type, message) {
+        // Utilise simplement alert comme solution de secours
+        alert(message);
+    }
 });
+
+// Cache-buster pour forcer le rechargement du script
+console.log('Script home.js v1.0.1 chargé correctement - ' + new Date().toISOString());
