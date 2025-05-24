@@ -8,6 +8,20 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </head>
+<?php
+// Définition de la fonction formatRole avant son utilisation
+if (!function_exists('formatRole')) {
+    function formatRole($role) {
+        switch ($role) {
+            case 'super_admin': return 'Super Admin';
+            case 'admin': return 'Admin';
+            case 'disabled': return 'Désactivé';
+            case 'user': return 'Utilisateur';
+            default: return $role; // Au cas où il y a un rôle non prévu
+        }
+    }
+}
+?>
 <body class="bg-light d-flex flex-column min-vh-100">
     <header class="bg-primary text-white mb-4">
         <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
@@ -21,15 +35,34 @@
                         <li class="nav-item">
                             <a class="nav-link" href="/home">Accueil</a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="/dashboard">Dashboard</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="/register">Inscription</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="/login">Connexion</a>
-                        </li>
+                        
+                        <?php if ($is_authenticated): ?>
+                            <?php if ($is_admin): ?>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/dashboard">Dashboard</a>
+                            </li>
+                            <?php endif; ?>
+                            
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-person-circle"></i> <?= htmlspecialchars($user['username']) ?> <span class="badge bg-secondary ms-1"><?= formatRole($user['role']) ?></span>
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                                    <?php if ($user['role'] !== 'user'): ?>
+                                        <li><div class="dropdown-item text-muted"><?= formatRole($user['role']) ?></div></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                    <?php endif; ?>
+                                    <li><a class="dropdown-item" href="/logout" onclick="return clearCache()">Déconnexion</a></li>
+                                </ul>
+                            </li>
+                        <?php else: ?>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/register">Inscription</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/login">Connexion</a>
+                            </li>
+                        <?php endif; ?>
                     </ul>
                 </div>
             </div>
@@ -39,20 +72,25 @@
         <?= $content ?? '' ?>
     </main>
     <footer class="bg-primary text-white text-center py-3 mt-auto">
-        <p>&copy; <?= date('Y') ?> - Mon site</p>
+        <p>&copy; <?= date('Y') ?> - Livre d'or</p>
     </footer>
-    <?php if (basename($_SERVER['REQUEST_URI']) === 'dashboard' || strpos($_SERVER['REQUEST_URI'], '/dashboard') !== false): ?>
-    <script src="/public/js/dashboard.js"></script>
+    
+    <?php if (isset($_SERVER['REQUEST_URI'])): ?>
+        <?php if (basename($_SERVER['REQUEST_URI']) === 'dashboard' || strpos($_SERVER['REQUEST_URI'], '/dashboard') !== false): ?>
+        <script src="/src/public/js/dashboard.js"></script>
+        <script src="/src/public/js/dashboard-validate.js"></script>
+        <?php endif; ?>
+        
+        <?php if (basename($_SERVER['REQUEST_URI']) === 'register' || strpos($_SERVER['REQUEST_URI'], '/register') !== false): ?>
+        <script src="/src/public/js/register-validate.js"></script>
+        <?php endif; ?>
+        
+        <?php if (basename($_SERVER['REQUEST_URI']) === 'login' || strpos($_SERVER['REQUEST_URI'], '/login') !== false): ?>
+        <script src="/src/public/js/login-validate.js"></script>
+        <?php endif; ?>
     <?php endif; ?>
-    <?php if (basename($_SERVER['REQUEST_URI']) === 'register' || strpos($_SERVER['REQUEST_URI'], '/register') !== false): ?>
-    <script src="/public/js/register-validate.js"></script>
-    <?php endif; ?>
-    <?php if (basename($_SERVER['REQUEST_URI']) === 'login' || strpos($_SERVER['REQUEST_URI'], '/login') !== false): ?>
-    <script src="/public/js/login-validate.js"></script>
-    <?php endif; ?>
-    <?php if (basename($_SERVER['REQUEST_URI']) === 'dashboard' || strpos($_SERVER['REQUEST_URI'], '/dashboard') !== false): ?>
-    <script src="/public/js/dashboard-validate.js"></script>
-    <?php endif; ?>
-    <script src="/public/js/regx.js"></script>
+    
+    <script src="/src/public/js/regx.js"></script>
+    <script src="/src/public/js/auth.js"></script>
 </body>
 </html>

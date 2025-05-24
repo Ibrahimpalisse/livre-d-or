@@ -1,0 +1,13 @@
+{
+    "require": {
+        "mongodb/mongodb": "^2.0",
+        "firebase/php-jwt": "^6.11"
+    },
+   "autoload": {
+    "psr-4": {
+        "Core\\": "src/core/",
+        "Models\\": "src/models/",
+        "Controllers\\": "src/controllers/"
+    }
+}
+}

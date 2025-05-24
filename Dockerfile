@@ -18,7 +18,13 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 RUN a2enmod rewrite
 
 # Copier le code source
-COPY ./src /var/www/html
+COPY . /var/www/html
+
+# Exclure les dossiers qui ne doivent pas être dans le conteneur
+RUN rm -rf /var/www/html/Dockerfile /var/www/html/docker-compose.yml /var/www/html/data
+
+# Donner les bonnes permissions
+RUN chown -R www-data:www-data /var/www/html && chmod -R 755 /var/www/html
 
 # Définir le répertoire de travail
 WORKDIR /var/www/html

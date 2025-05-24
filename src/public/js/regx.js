@@ -1,11 +1,105 @@
-// Validation du nom d'utilisateur : lettres, chiffres, tirets, 3 à 20 caractères
+/**
+ * Fichier contenant les expressions régulières et les fonctions de validation communes
+ */
+
+// Expressions régulières
+const PATTERNS = {
+    // Nom d'utilisateur : entre 3 et 20 caractères alphanumériques et tirets bas
+    USERNAME: /^[a-zA-Z0-9_]{3,20}$/,
+    
+    // Mot de passe : au moins 8 caractères, dont au moins 1 majuscule, 1 minuscule et 1 chiffre
+    PASSWORD: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/,
+    
+    // Email : format valide d'email
+    EMAIL: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+    
+    // Date : format JJ/MM/AAAA
+    DATE: /^(\d{2})\/(\d{2})\/(\d{4})$/,
+    
+    // Numéro de téléphone : format international avec +, ou format français avec 0
+    PHONE: /^(\+\d{1,3}\s?)?(\d{9,10})$/,
+    
+    // Code postal français : 5 chiffres
+    POSTAL_CODE: /^\d{5}$/,
+    
+    // Numéro de carte de crédit (sans espaces ou tirets)
+    CREDIT_CARD: /^\d{16}$/,
+    
+    // URL : protocole facultatif, domaine obligatoire
+    URL: /^(https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(\/.*)?$/
+};
+
+/**
+ * Valide un nom d'utilisateur
+ * @param {string} username - Le nom d'utilisateur à valider
+ * @returns {boolean} - True si le nom d'utilisateur est valide, false sinon
+ */
 function validateUsername(username) {
-    return /^[a-zA-Z0-9_-]{3,20}$/.test(username);
+    return PATTERNS.USERNAME.test(username);
 }
 
-// Validation du mot de passe : au moins 8 caractères, une majuscule, une minuscule, un chiffre
+/**
+ * Valide un mot de passe
+ * @param {string} password - Le mot de passe à valider
+ * @returns {boolean} - True si le mot de passe est valide, false sinon
+ */
 function validatePassword(password) {
-    return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(password);
+    return PATTERNS.PASSWORD.test(password);
+}
+
+/**
+ * Valide un email
+ * @param {string} email - L'email à valider
+ * @returns {boolean} - True si l'email est valide, false sinon
+ */
+function validateEmail(email) {
+    return PATTERNS.EMAIL.test(email);
+}
+
+/**
+ * Valide une date au format JJ/MM/AAAA
+ * @param {string} date - La date à valider
+ * @returns {boolean} - True si la date est valide, false sinon
+ */
+function validateDate(date) {
+    if (!PATTERNS.DATE.test(date)) {
+        return false;
+    }
+    
+    const parts = date.split('/');
+    const day = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10);
+    const year = parseInt(parts[2], 10);
+    
+    // Vérifier que le mois est valide
+    if (month < 1 || month > 12) {
+        return false;
+    }
+    
+    // Vérifier que le jour est valide pour le mois
+    const daysInMonth = [31, (isLeapYear(year) ? 29 : 28), 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    return day > 0 && day <= daysInMonth[month - 1];
+}
+
+/**
+ * Vérifie si une année est bissextile
+ * @param {number} year - L'année à vérifier
+ * @returns {boolean} - True si l'année est bissextile, false sinon
+ */
+function isLeapYear(year) {
+    return (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
+}
+
+// Exporter les fonctions si on est dans un environnement Node.js
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        PATTERNS,
+        validateUsername,
+        validatePassword,
+        validateEmail,
+        validateDate,
+        isLeapYear
+    };
 }
 
 // Validation d'une URL
