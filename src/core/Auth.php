@@ -59,7 +59,31 @@ class Auth {
             $expiration = Config::get('jwt.expiration', 3600);
         }
         
-        setcookie('jwt_token', $token, time() + $expiration, '/', '', false, true);
+        $isSecure = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
+        $options = [
+            'expires' => time() + $expiration,
+            'path' => '/',
+            'domain' => '',
+            'secure' => $isSecure, // Activer uniquement en HTTPS
+            'httponly' => true,    // Empêche l'accès via JavaScript
+            'samesite' => 'Lax'    // Protection contre CSRF
+        ];
+        
+        if (PHP_VERSION_ID >= 70300) {
+            // Pour PHP 7.3.0 et supérieur, nous pouvons utiliser le tableau d'options
+            setcookie('jwt_token', $token, $options);
+        } else {
+            // Pour les versions plus anciennes de PHP
+            setcookie(
+                'jwt_token', 
+                $token, 
+                $options['expires'], 
+                $options['path'], 
+                $options['domain'], 
+                $options['secure'], 
+                $options['httponly']
+            );
+        }
     }
 
     /**
@@ -93,10 +117,31 @@ class Auth {
      * @return void
      */
     public static function removeTokenCookie(): void {
-        // Forcer la suppression avec plusieurs options pour s'assurer que le cookie est vraiment supprimé
-        setcookie('jwt_token', '', time() - 3600, '/', '', false, true);
-        setcookie('jwt_token', '', time() - 3600, '/', '', false, false);
-        setcookie('jwt_token', '', time() - 3600);
+        $isSecure = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
+        $options = [
+            'expires' => time() - 3600,
+            'path' => '/',
+            'domain' => '',
+            'secure' => $isSecure,
+            'httponly' => true,
+            'samesite' => 'Lax'
+        ];
+        
+        if (PHP_VERSION_ID >= 70300) {
+            // Pour PHP 7.3.0 et supérieur
+            setcookie('jwt_token', '', $options);
+        } else {
+            // Pour les versions plus anciennes de PHP
+            setcookie(
+                'jwt_token', 
+                '', 
+                $options['expires'], 
+                $options['path'], 
+                $options['domain'], 
+                $options['secure'], 
+                $options['httponly']
+            );
+        }
         
         // Nettoyage des variables globales
         if (isset($_COOKIE['jwt_token'])) {

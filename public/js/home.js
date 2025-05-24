@@ -10,6 +10,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const limit = 9; // Publications par page
     let isUserAuthenticated = false;
     
+    // Ajouter le token CSRF à toutes les requêtes POST
+    const csrfToken = document.querySelector('input[name="csrf_token"]')?.value;
+    
     // Chargement initial
     loadPublications();
     
@@ -672,58 +675,44 @@ document.addEventListener('DOMContentLoaded', function () {
     
     // Fonction pour soumettre un commentaire
     function submitComment(publicationId, content, callback) {
+        // Vérifier que le contenu n'est pas vide
+        if (!content.trim()) {
+            showToast('error', 'Le commentaire ne peut pas être vide.');
+            return;
+        }
+        
+        const postData = {
+            publication_id: publicationId,
+            content: content,
+            csrf_token: csrfToken // Ajouter le token CSRF
+        };
+        
         fetch('/comments/add', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest'
             },
-            body: JSON.stringify({
-                publication_id: publicationId,
-                content: content
-            })
+            body: JSON.stringify(postData)
         })
-        .then(response => {
-            // Vérifier si la réponse est JSON
-            const contentType = response.headers.get('content-type');
-            if (contentType && contentType.includes('application/json')) {
-                return response.json();
-            } else {
-                // Si ce n'est pas du JSON, c'est probablement une redirection vers la page de connexion
-                if (response.status === 401 || response.status === 302) {
-                    // Rediriger vers la page de connexion
-                    window.location.href = '/login';
-                    throw new Error('Vous devez être connecté pour commenter.');
-                } else {
-                    // Autre type d'erreur
-                    throw new Error('La réponse du serveur n\'est pas au format attendu. Veuillez réessayer plus tard.');
-                }
-            }
-        })
+        .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Commentaire ajouté avec succès
-                if (callback) callback();
+                // Effacer le champ de commentaire
+                document.getElementById('commentContent').value = '';
                 
-                // Mettre à jour les statistiques pour cette publication
-                loadCommentStats(publicationId);
+                // Recharger les commentaires
+                loadComments(publicationId);
+                
+                // Afficher un message de succès
+                showToast('success', data.message || 'Commentaire ajouté avec succès.');
             } else {
-                // Erreur lors de l'ajout du commentaire
-                alert(data.message || 'Erreur lors de l\'ajout du commentaire.');
-                if (callback) callback();
+                showToast('error', data.message || 'Erreur lors de l\'ajout du commentaire.');
             }
         })
         .catch(error => {
-            // Si l'erreur contient le mot "connecté", proposer la redirection
-            if (error.message.includes('connecté')) {
-                if (confirm('Vous devez être connecté pour commenter. Voulez-vous vous connecter maintenant?')) {
-                    window.location.href = '/login';
-                }
-            } else {
-                alert(error.message || 'Une erreur est survenue lors de l\'ajout du commentaire.');
-            }
-            
-            if (callback) callback();
+            console.error('Erreur:', error);
+            showToast('error', 'Erreur lors de l\'ajout du commentaire.');
         });
     }
     

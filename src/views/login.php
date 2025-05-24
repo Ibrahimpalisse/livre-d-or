@@ -12,6 +12,7 @@
                 </div>
                 
                 <form id="loginForm" action="/login" method="post" autocomplete="off">
+                    <?php use Core\Security; echo Security::csrfField(); ?>
                     <div class="mb-4">
                         <label for="username" class="form-label">Nom d'utilisateur</label>
                         <div class="input-group">

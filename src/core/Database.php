@@ -9,14 +9,37 @@ class Database {
     private $db;
 
     private function __construct() {
-        // Récupérer l'URI MongoDB depuis la variable d'environnement ou utiliser une valeur par défaut
-        $mongoUri = getenv('MONGO_URI') ?: 'mongodb://mongo:27017';
+        // Charger la configuration
+        $config = include dirname(__DIR__) . '/config/config.php';
+        $mongoConfig = $config['mongodb'];
+        
+        // Vérifier d'abord si MONGO_URI est défini dans l'environnement
+        $mongoUri = getenv('MONGO_URI');
+        
+        // Si MONGO_URI n'est pas défini, construire l'URI à partir des paramètres de configuration
+        if (!$mongoUri) {
+            $auth = '';
+            if (!empty($mongoConfig['username']) && !empty($mongoConfig['password'])) {
+                $auth = urlencode($mongoConfig['username']) . ':' . urlencode($mongoConfig['password']) . '@';
+            }
+            
+            $mongoUri = "mongodb://{$auth}{$mongoConfig['host']}:{$mongoConfig['port']}";
+        }
         
         try {
-            $this->client = new Client($mongoUri);
-            $this->db = $this->client->livre_d_or; // Nom de la base de données
+            $options = [
+                'connectTimeoutMS' => 3000,
+                'serverSelectionTimeoutMS' => 5000
+            ];
+            
+            $this->client = new Client($mongoUri, $options);
+            $this->db = $this->client->{$mongoConfig['database']};
+            
+            // Test de connexion
+            $this->db->command(['ping' => 1]);
         } catch (\Exception $e) {
-            die('Erreur de connexion à MongoDB: ' . $e->getMessage());
+            error_log('Erreur de connexion à MongoDB: ' . $e->getMessage());
+            die('Erreur de connexion à la base de données. Consultez les logs pour plus d\'informations.');
         }
     }
 

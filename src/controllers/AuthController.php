@@ -3,6 +3,7 @@ namespace Controllers;
 
 use Models\User;
 use Core\Auth;
+use Core\Security;
 
 class AuthController {
     private $userModel;
@@ -23,6 +24,24 @@ class AuthController {
 
         // Vérifier si la requête est POST
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // Pour les requêtes AJAX, le token CSRF sera dans l'en-tête ou les données JSON
+            if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest') {
+                $data = json_decode(file_get_contents('php://input'), true);
+                if (!empty($data) && isset($data['csrf_token'])) {
+                    Security::validateCsrfToken($data['csrf_token']);
+                } elseif (isset($_POST['csrf_token'])) {
+                    Security::validateCsrfToken($_POST['csrf_token']);
+                } else {
+                    $response['message'] = 'Token CSRF manquant.';
+                    header('Content-Type: application/json');
+                    echo json_encode($response);
+                    exit;
+                }
+            } elseif (!isset($_POST['csrf_token']) || !Security::verifyCsrfToken($_POST['csrf_token'])) {
+                $response['message'] = 'Erreur de sécurité: Token CSRF invalide.';
+                return $response;
+            }
+
             $username = trim($_POST['username'] ?? '');
             $password = trim($_POST['password'] ?? '');
             $password_confirm = trim($_POST['password_confirm'] ?? '');
@@ -110,6 +129,24 @@ class AuthController {
 
         // Vérifier si la requête est POST
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // Pour les requêtes AJAX, le token CSRF sera dans l'en-tête ou les données JSON
+            if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest') {
+                $data = json_decode(file_get_contents('php://input'), true);
+                if (!empty($data) && isset($data['csrf_token'])) {
+                    Security::validateCsrfToken($data['csrf_token']);
+                } elseif (isset($_POST['csrf_token'])) {
+                    Security::validateCsrfToken($_POST['csrf_token']);
+                } else {
+                    $response['message'] = 'Token CSRF manquant.';
+                    header('Content-Type: application/json');
+                    echo json_encode($response);
+                    exit;
+                }
+            } elseif (!isset($_POST['csrf_token']) || !Security::verifyCsrfToken($_POST['csrf_token'])) {
+                $response['message'] = 'Erreur de sécurité: Token CSRF invalide.';
+                return $response;
+            }
+
             $username = trim($_POST['username'] ?? '');
             $password = trim($_POST['password'] ?? '');
             

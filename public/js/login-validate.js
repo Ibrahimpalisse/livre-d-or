@@ -112,6 +112,9 @@ document.addEventListener('DOMContentLoaded', function() {
             if (isValid) {
                 // Création de FormData pour envoyer les données
                 const formData = new FormData(loginForm);
+                // S'assurer que le token CSRF est inclus
+                const csrfToken = document.querySelector('input[name="csrf_token"]').value;
+                formData.append('csrf_token', csrfToken);
                 
                 // Envoi des données au serveur par AJAX
                 fetch('/login', {
