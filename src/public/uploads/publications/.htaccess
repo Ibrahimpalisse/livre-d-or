@@ -1,0 +1,12 @@
+# Permet d'afficher les images
+Options -Indexes
+<FilesMatch ".*\.(jpg|jpeg|png|gif|webp)$">
+    Order Allow,Deny
+    Allow from all
+</FilesMatch>
+
+# Bloque tous les autres fichiers
+<FilesMatch ".*\.(php|html|js|py|rb|pl|cgi)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch> 

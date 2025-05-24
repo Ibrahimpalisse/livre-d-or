@@ -1,10 +1,5 @@
-console.log('login-validate.js chargé');
-alert('Le script login-validate.js est chargé');
-
 function showValidation(input, isValid, message) {
     const errorElement = document.getElementById(input.id + 'Error');
-    console.log('showValidation', input, isValid, message);
-    console.log('errorElement', errorElement);
     if (!errorElement) return;
     
     if (isValid) {
@@ -15,15 +10,40 @@ function showValidation(input, isValid, message) {
         input.classList.remove('is-valid');
         input.classList.add('is-invalid');
         errorElement.textContent = message;
+        // Force l'affichage du message d'erreur
+        errorElement.style.display = 'block';
     }
 }
 
+// Ajouter un style pour s'assurer que .invalid-feedback s'affiche
 document.addEventListener('DOMContentLoaded', function() {
-    const loginForm = document.getElementById('loginForm');
+    // Créer une balise style
+    const style = document.createElement('style');
+    style.innerHTML = `
+        .invalid-feedback {
+            display: block !important;
+            color: red !important;
+            font-weight: bold !important;
+            margin-top: 5px !important;
+        }
+        .is-invalid {
+            border-color: red !important;
+            background-color: rgba(255, 0, 0, 0.05) !important;
+        }
+    `;
+    // Ajouter ce style au head
+    document.head.appendChild(style);
+
+    const registerForm = document.getElementById('registerForm');
     const usernameInput = document.getElementById('username');
     const passwordInput = document.getElementById('password');
+    const passwordConfirmInput = document.getElementById('password_confirm');
     const togglePasswordBtn = document.getElementById('togglePassword');
     const togglePasswordIcon = document.getElementById('togglePasswordIcon');
+
+    // Regex pour la validation
+    const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
 
     // Afficher/masquer le mot de passe
     if (togglePasswordBtn) {
@@ -48,6 +68,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (username === '') {
             showValidation(usernameInput, false, 'Le nom d\'utilisateur est requis.');
+        } else if (!usernameRegex.test(username)) {
+            showValidation(usernameInput, false, 'Le nom d\'utilisateur doit contenir entre 3 et 20 caractères alphanumériques.');
         } else {
             showValidation(usernameInput, true, '');
         }
@@ -59,40 +81,69 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (password === '') {
             showValidation(passwordInput, false, 'Le mot de passe est requis.');
+        } else if (!passwordRegex.test(password)) {
+            showValidation(passwordInput, false, 'Le mot de passe doit contenir au moins 8 caractères, dont une majuscule, une minuscule et un chiffre.');
         } else {
             showValidation(passwordInput, true, '');
+        }
+        
+        // Vérifier la correspondance avec la confirmation
+        if (passwordConfirmInput.value !== '') {
+            if (passwordConfirmInput.value !== password) {
+                showValidation(passwordConfirmInput, false, 'Les mots de passe ne correspondent pas.');
+            } else {
+                showValidation(passwordConfirmInput, true, '');
+            }
+        }
+    });
+
+    // Validation en temps réel de la confirmation du mot de passe
+    passwordConfirmInput.addEventListener('input', function() {
+        const passwordConfirm = passwordConfirmInput.value;
+        const password = passwordInput.value;
+        
+        if (passwordConfirm === '') {
+            showValidation(passwordConfirmInput, false, 'La confirmation du mot de passe est requise.');
+        } else if (passwordConfirm !== password) {
+            showValidation(passwordConfirmInput, false, 'Les mots de passe ne correspondent pas.');
+        } else {
+            showValidation(passwordConfirmInput, true, '');
         }
     });
 
     // Soumission du formulaire
-    if (loginForm) {
-        loginForm.addEventListener('submit', function(e) {
+    if (registerForm) {
+        registerForm.addEventListener('submit', function(e) {
             e.preventDefault();
             
             const username = usernameInput.value.trim();
             const password = passwordInput.value;
+            const passwordConfirm = passwordConfirmInput.value;
             
             // Validation finale
             let isValid = true;
             
             // Validation du nom d'utilisateur
-            if (username === '') {
-                showValidation(usernameInput, false, 'Le nom d\'utilisateur est requis.');
+            if (username === '' || !usernameRegex.test(username)) {
                 isValid = false;
             }
             
             // Validation du mot de passe
-            if (password === '') {
-                showValidation(passwordInput, false, 'Le mot de passe est requis.');
+            if (password === '' || !passwordRegex.test(password)) {
+                isValid = false;
+            }
+            
+            // Validation de la confirmation du mot de passe
+            if (passwordConfirm === '' || passwordConfirm !== password) {
                 isValid = false;
             }
             
             if (isValid) {
                 // Création de FormData pour envoyer les données
-                const formData = new FormData(loginForm);
+                const formData = new FormData(registerForm);
                 
                 // Envoi des données au serveur par AJAX
-                fetch('/login', {
+                fetch('/register', {
                     method: 'POST',
                     body: formData,
                     headers: {
@@ -104,27 +155,26 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (contentType && contentType.includes('application/json')) {
                         return response.json();
                     } else {
-                        return response.text().then(text => {
-                            console.error('Réponse non-JSON:', text);
-                            throw new Error('La réponse du serveur n\'est pas au format JSON');
-                        });
+                        throw new Error('La réponse du serveur n\'est pas au format JSON');
                     }
                 })
                 .then(data => {
                     if (data.success) {
-                        // Connexion réussie
-                        showAlert('success', data.message || 'Connexion réussie !');
+                        // Inscription réussie
+                        showAlert('success', data.message || 'Inscription réussie ! Vous pouvez maintenant vous connecter.');
                         
-                        // Redirection après 1 seconde
+                        // Redirection après 1.5 secondes
                         setTimeout(() => {
-                            window.location.href = data.redirect || '/dashboard';
-                        }, 1000);
+                            window.location.href = data.redirect || '/login';
+                        }, 1500);
                     } else {
                         // Erreurs spécifiques aux champs
                         if (data.errors) {
                             Object.keys(data.errors).forEach(field => {
                                 const input = document.getElementById(field);
-                                if (input) {
+                                const errorElement = document.getElementById(field + 'Error');
+                                
+                                if (input && errorElement) {
                                     showValidation(input, false, data.errors[field]);
                                 }
                             });
@@ -138,7 +188,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 })
                 .catch(error => {
                     console.error('Erreur:', error);
-                    showAlert('danger', 'Une erreur est survenue lors de la connexion.');
+                    showAlert('danger', 'Une erreur est survenue lors de l\'inscription.');
                 });
             }
         });
@@ -159,7 +209,7 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
         
         // Insérer l'alerte avant le formulaire
-        loginForm.parentNode.insertBefore(alertDiv, loginForm);
+        registerForm.parentNode.insertBefore(alertDiv, registerForm);
         
         // Faire disparaître l'alerte après 5 secondes
         setTimeout(() => {

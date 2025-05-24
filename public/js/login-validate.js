@@ -1,5 +1,25 @@
 console.log('login-validate.js chargé');
-alert('Le script login-validate.js est chargé');
+// Alerte supprimée car plus nécessaire
+
+// Ajouter un style pour s'assurer que .invalid-feedback s'affiche
+document.addEventListener('DOMContentLoaded', function() {
+    // Créer une balise style
+    const style = document.createElement('style');
+    style.innerHTML = `
+        .invalid-feedback {
+            display: block !important;
+            color: red !important;
+            font-weight: bold !important;
+            margin-top: 5px !important;
+        }
+        .is-invalid {
+            border-color: red !important;
+            background-color: rgba(255, 0, 0, 0.05) !important;
+        }
+    `;
+    // Ajouter ce style au head
+    document.head.appendChild(style);
+});
 
 function showValidation(input, isValid, message) {
     const errorElement = document.getElementById(input.id + 'Error');
@@ -15,6 +35,8 @@ function showValidation(input, isValid, message) {
         input.classList.remove('is-valid');
         input.classList.add('is-invalid');
         errorElement.textContent = message;
+        // Force l'affichage du message d'erreur
+        errorElement.style.display = 'block';
     }
 }
 

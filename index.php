@@ -125,23 +125,280 @@ $router->addProtected('/dashboard', function() use ($router) {
     ]);
 }, User::ROLE_ADMIN);
 
-// Route pour la gestion des utilisateurs, accessible uniquement aux super admins
-// $router->addProtected('/users', function() use ($router) {
-//     $userModel = new User();
-//     $users = $userModel->findAll();
-//     
-//     $router->render('users', [
-//         'title' => 'Gestion des utilisateurs',
-//         'users' => $users
-//     ]);
-// }, User::ROLE_SUPER_ADMIN);
+// Route API pour que le super admin modifie le rôle d'un utilisateur
+$router->addProtected('/superadmin/update-role', function() {
+    $controller = new Controllers\SuperAdminController();
+    $controller->updateRole();
+}, Models\User::ROLE_SUPER_ADMIN);
 
-// Route API pour mettre à jour le rôle d'un utilisateur (accessible uniquement aux super admin)
-// $router->addProtected('/api/update-role', function() {
-//     $apiController = new Controllers\ApiController();
-//     $apiController->updateRole();
-// }, User::ROLE_SUPER_ADMIN);
+// Route pour la création d'une publication (admin ou super_admin)
+$router->addProtected('/publication/create', function() {
+    $controller = new Controllers\PublicationController();
+    $response = $controller->create($_POST, $_FILES, Auth::getCurrentUser());
+    
+    // Retourner une réponse JSON
+    header('Content-Type: application/json');
+    echo json_encode($response);
+}, Models\User::ROLE_ADMIN);
 
-// Ajoute d'autres routes ici...
+// Route pour lister les publications (accessible aux admin et super_admin au tableau de bord)
+$router->addProtected('/publication/list', function() {
+    $controller = new Controllers\PublicationController();
+    $result = $controller->getAll($_GET);
+    
+    header('Content-Type: application/json');
+    echo json_encode($result);
+}, Models\User::ROLE_ADMIN);
+
+// Route publique pour lister les publications (pour la page d'accueil)
+$router->add('/publication/list', function() {
+    $controller = new Controllers\PublicationController();
+    $result = $controller->getAll($_GET);
+    
+    header('Content-Type: application/json');
+    echo json_encode($result);
+});
+
+// Route pour récupérer une publication par son ID
+$router->addProtected('/publication/get', function() {
+    $id = $_GET['id'] ?? null;
+    if (!$id) {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'message' => 'ID de publication manquant']);
+        return;
+    }
+    $controller = new Controllers\PublicationController();
+    $publication = $controller->getById($id);
+    header('Content-Type: application/json');
+    echo json_encode([
+        'success' => $publication !== null,
+        'publication' => $publication,
+        'message' => $publication ? null : 'Publication non trouvée'
+    ]);
+}, Models\User::ROLE_ADMIN);
+
+// Route pour mettre à jour une publication
+$router->addProtected('/publication/update', function() {
+    $id = $_POST['id'] ?? $_GET['id'] ?? null;
+    if (!$id) {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'message' => 'ID de publication manquant']);
+        return;
+    }
+    $controller = new Controllers\PublicationController();
+    $response = $controller->update($id, $_POST, $_FILES, Core\Auth::getCurrentUser());
+    header('Content-Type: application/json');
+    echo json_encode($response);
+}, Models\User::ROLE_ADMIN);
+
+// Route pour supprimer une publication
+$router->addProtected('/publication/delete', function() {
+    $id = $_POST['id'] ?? $_GET['id'] ?? null;
+    if (!$id) {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'message' => 'ID de publication manquant']);
+        return;
+    }
+    $controller = new Controllers\PublicationController();
+    $response = $controller->delete($id, Core\Auth::getCurrentUser());
+    header('Content-Type: application/json');
+    echo json_encode($response);
+}, Models\User::ROLE_ADMIN);
+
+// Route pour afficher la page d'édition d'une publication
+$router->addProtected('/dashboard/edit-publication/{id}', function() use ($router) {
+    $id = explode('/', $_SERVER['REQUEST_URI'])[3] ?? null;
+    
+    if (!$id) {
+        header('Location: /dashboard');
+        exit;
+    }
+    
+    $controller = new Controllers\PublicationController();
+    $publication = $controller->getById($id);
+    
+    if (!$publication) {
+        header('Location: /dashboard');
+        exit;
+    }
+    
+    $router->render('edit-publication', [
+        'title' => 'Modifier une publication',
+        'publication' => $publication
+    ]);
+}, Models\User::ROLE_ADMIN);
+
+// Route pour récupérer les commentaires d'une publication
+$router->add('/comments/publication/{id}', function() {
+    $id = explode('/', $_SERVER['REQUEST_URI'])[3] ?? null;
+    
+    $controller = new Controllers\CommentController();
+    $result = $controller->getCommentsByPublication($id);
+    
+    header('Content-Type: application/json');
+    echo json_encode($result);
+});
+
+// Nouvelle route alternative pour récupérer les commentaires par GET query parameter
+$router->add('/comments/by-publication', function() {
+    $id = $_GET['id'] ?? null;
+    
+    $controller = new Controllers\CommentController();
+    $result = $controller->getCommentsByPublication($id);
+    
+    header('Content-Type: application/json');
+    echo json_encode($result);
+});
+
+// Route pour ajouter un commentaire
+$router->addProtected('/comments/add', function() {
+    $data = json_decode(file_get_contents('php://input'), true);
+    $publicationId = $data['publication_id'] ?? null;
+    $content = $data['content'] ?? null;
+    
+    $controller = new Controllers\CommentController();
+    $result = $controller->addComment($publicationId, $content, Auth::getCurrentUser());
+    
+    header('Content-Type: application/json');
+    echo json_encode($result);
+});
+
+// Route pour supprimer un commentaire (utilisateur connecté uniquement)
+$router->addProtected('/comments/delete/{id}', function() {
+    $id = explode('/', $_SERVER['REQUEST_URI'])[3] ?? null;
+    
+    $controller = new Controllers\CommentController();
+    $result = $controller->deleteComment($id, Core\Auth::getCurrentUser());
+    
+    header('Content-Type: application/json');
+    echo json_encode($result);
+}, Models\User::ROLE_USER);
+
+// Route pour ajouter une réaction (like/dislike) à un commentaire - nouvelle approche sans paramètre dans l'URL
+$router->addProtected('/comments/react', function() {
+    // Récupérer les données JSON envoyées
+    $data = json_decode(file_get_contents('php://input'), true);
+    $commentId = $data['commentId'] ?? null;
+    $isLike = isset($data['isLike']) ? (bool)$data['isLike'] : true;
+    
+    // Vérifier que l'ID est présent
+    if (!$commentId) {
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => false, 
+            'message' => 'ID de commentaire manquant'
+        ]);
+        return;
+    }
+    
+    // Log pour le débogage
+    error_log("Traitement de la réaction pour le commentaire ID: " . $commentId);
+    
+    // Récupérer l'utilisateur connecté
+    $user = Auth::getCurrentUser();
+    
+    // Appeler le contrôleur
+    $controller = new Controllers\CommentController();
+    $result = $controller->addReaction($commentId, $isLike, $user);
+    
+    // Récupérer les compteurs mis à jour
+    if ($result['success']) {
+        $comment = (new Models\Comment())->findById($commentId);
+        if ($comment) {
+            $result['likes'] = $comment['likes'];
+            $result['dislikes'] = $comment['dislikes'];
+        }
+    }
+    
+    // Toujours retourner du JSON
+    header('Content-Type: application/json');
+    echo json_encode($result);
+});
+
+// Route pour valider/invalider une publication
+$router->addProtected('/publication/validate', function() {
+    // Récupérer les données JSON envoyées
+    $data = json_decode(file_get_contents('php://input'), true);
+    $publicationId = $data['publication_id'] ?? null;
+    $isValid = isset($data['isValid']) ? (bool)$data['isValid'] : null;
+    
+    // Vérifier que les champs obligatoires sont présents
+    if (!$publicationId || $isValid === null) {
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => false, 
+            'message' => 'ID de publication ou statut de validation manquant'
+        ]);
+        return;
+    }
+    
+    // Log pour le débogage
+    error_log("Traitement de la validation pour la publication ID: " . $publicationId . ", isValid: " . ($isValid ? 'true' : 'false'));
+    
+    // Récupérer l'utilisateur connecté
+    $user = Auth::getCurrentUser();
+    
+    // Appeler le contrôleur
+    $controller = new Controllers\PublicationController();
+    $result = $controller->validatePublication($publicationId, $isValid, $user);
+    
+    // Toujours retourner du JSON
+    header('Content-Type: application/json');
+    echo json_encode($result);
+});
+
+// Route pour valider/invalider une publication via le CommentController
+$router->addProtected('/comments/validate-publication', function() {
+    // Récupérer les données JSON envoyées
+    $data = json_decode(file_get_contents('php://input'), true);
+    $publicationId = $data['publication_id'] ?? null;
+    $isValid = isset($data['isValid']) ? (bool)$data['isValid'] : null;
+    
+    // Vérifier que les champs obligatoires sont présents
+    if (!$publicationId || $isValid === null) {
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => false, 
+            'message' => 'ID de publication ou statut de validation manquant'
+        ]);
+        return;
+    }
+    
+    // Log pour le débogage
+    error_log("Traitement de la validation (via CommentController) pour la publication ID: " . $publicationId . ", isValid: " . ($isValid ? 'true' : 'false'));
+    
+    // Récupérer l'utilisateur connecté
+    $user = Auth::getCurrentUser();
+    
+    // Appeler le contrôleur
+    $controller = new Controllers\CommentController();
+    $result = $controller->validatePublication($publicationId, $isValid, $user);
+    
+    // Toujours retourner du JSON
+    header('Content-Type: application/json');
+    echo json_encode($result);
+});
+
+// Route pour récupérer les statistiques de validation d'une publication
+$router->add('/publication/stats', function() {
+    $id = $_GET['id'] ?? null;
+    
+    if (!$id) {
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => false,
+            'message' => 'ID de publication manquant'
+        ]);
+        return;
+    }
+    
+    $stats = (new Models\Publication())->getValidationStats($id);
+    
+    header('Content-Type: application/json');
+    echo json_encode([
+        'success' => true,
+        'stats' => $stats
+    ]);
+});
 
 $router->dispatch($_SERVER['REQUEST_URI']);

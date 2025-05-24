@@ -1,0 +1,263 @@
+/* Style personnalisé pour Livre d'Or */
+
+:root {
+  /* Nouvelle palette de couleurs - tons dorés et élégants */
+  --primary: #6a3b0a;       /* Marron doré foncé */
+  --primary-dark: #4a2907;  /* Marron doré plus foncé */
+  --primary-light: #c19a67; /* Beige doré */
+  --accent: #e0ae68;        /* Or clair */
+  --accent-light: #f5e6cc;  /* Beige très clair */
+  --dark: #352010;          /* Brun foncé */
+  --light: #fff8eb;         /* Blanc cassé */
+  --text: #2b1d0e;          /* Texte brun foncé */
+  --text-light: #7d6344;    /* Texte brun clair */
+  --success: #6b8e4e;       /* Vert foncé */
+  --danger: #8b3a3a;        /* Rouge foncé */
+  --warning: #cc9b33;       /* Or foncé */
+  --info: #426b8e;          /* Bleu foncé */
+}
+
+/* Styles généraux */
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: var(--text);
+  background-color: var(--light);
+  line-height: 1.6;
+}
+
+/* Entête */
+header.site-header {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-bottom: 3px solid var(--accent);
+}
+
+.navbar-brand {
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 1.8rem;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.navbar-dark .navbar-nav .nav-link {
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 500;
+  transition: color 0.3s;
+}
+
+.navbar-dark .navbar-nav .nav-link:hover {
+  color: var(--accent);
+}
+
+/* Conteneurs et cartes */
+.container {
+  max-width: 1200px;
+}
+
+.card {
+  border: none;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transition: transform 0.3s, box-shadow 0.3s;
+  overflow: hidden;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+  background-color: var(--primary-light);
+  color: var(--light);
+  border-bottom: 2px solid var(--accent);
+  font-weight: 600;
+}
+
+.card-footer {
+  background-color: var(--accent-light);
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+/* Images de publication */
+.publication-image {
+  height: 200px;
+  background-size: cover;
+  background-position: center;
+  border-bottom: 3px solid var(--accent);
+  position: relative;
+}
+
+/* Badges */
+.badge {
+  font-weight: 500;
+  padding: 0.4em 0.7em;
+  border-radius: 0.3rem;
+}
+
+/* Boutons */
+.btn {
+  font-weight: 500;
+  border-radius: 0.3rem;
+  padding: 0.5rem 1.2rem;
+  transition: all 0.3s;
+  border: none;
+}
+
+.btn-primary {
+  background-color: var(--primary);
+  color: white;
+}
+
+.btn-primary:hover, .btn-primary:focus {
+  background-color: var(--primary-dark);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.btn-outline-primary {
+  color: var(--primary);
+  border: 1px solid var(--primary);
+}
+
+.btn-outline-primary:hover, .btn-outline-primary:focus {
+  background-color: var(--primary);
+  color: white;
+}
+
+/* Formulaires */
+.form-control, .form-select {
+  border-radius: 0.3rem;
+  padding: 0.6rem 1rem;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background-color: white;
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: var(--primary-light);
+  box-shadow: 0 0 0 0.25rem rgba(193, 154, 103, 0.25);
+}
+
+/* Pied de page */
+footer {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: rgba(255, 255, 255, 0.85);
+  padding: 1.5rem 0;
+  border-top: 3px solid var(--accent);
+}
+
+/* Animation de chargement personnalisée */
+.spinner-border.text-primary {
+  color: var(--primary) !important;
+}
+
+/* Style de filtres */
+.filter-group {
+  background-color: var(--accent-light);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Style pour les en-têtes de section */
+.section-title {
+  position: relative;
+  margin-bottom: 2rem;
+  padding-bottom: 0.5rem;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.section-title::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 60px;
+  height: 3px;
+  background-color: var(--accent);
+}
+
+/* Style pour la pagination */
+.pagination .page-link {
+  color: var(--primary);
+  background-color: white;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.pagination .page-item.active .page-link {
+  background-color: var(--primary);
+  border-color: var(--primary);
+}
+
+/* Personnalisation des modales */
+.modal-content {
+  border-radius: 0.5rem;
+  border: none;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.modal-header {
+  background-color: var(--primary-light);
+  color: white;
+  border-bottom: 2px solid var(--accent);
+}
+
+.modal-footer {
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  background-color: var(--accent-light);
+}
+
+/* Adaptation responsive */
+@media (max-width: 768px) {
+  .card-deck {
+    display: block;
+  }
+  
+  .card {
+    margin-bottom: 1.5rem;
+  }
+}
+
+/* Classes d'override pour les couleurs Bootstrap */
+.bg-primary {
+  background-color: var(--primary) !important;
+}
+
+.bg-success {
+  background-color: var(--success) !important;
+}
+
+.bg-danger {
+  background-color: var(--danger) !important;
+}
+
+.bg-warning {
+  background-color: var(--warning) !important;
+}
+
+.bg-info {
+  background-color: var(--info) !important;
+}
+
+.text-primary {
+  color: var(--primary) !important;
+}
+
+/* Animations pour les éléments interactifs */
+.btn, .card, .nav-link {
+  transition: all 0.3s ease;
+}
+
+/* Style spécifique pour les types de publications */
+.type-badge.roman {
+  background-color: var(--primary);
+}
+
+.type-badge.manhwa {
+  background-color: var(--success);
+}
+
+.type-badge.anime {
+  background-color: var(--danger);
+} 

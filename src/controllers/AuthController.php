@@ -150,7 +150,9 @@ class AuthController {
                         $response['message'] = 'Une erreur est survenue lors de la connexion. Veuillez réessayer.';
                     }
                 } else {
-                    $response['message'] = 'Nom d\'utilisateur ou mot de passe incorrect.';
+                    // Message générique pour des raisons de sécurité
+                    $response['message'] = 'Identifiants invalides. Veuillez vérifier votre nom d\'utilisateur et mot de passe.';
+                    // Ne pas préciser quel champ est incorrect pour éviter les attaques par énumération
                 }
             }
             
@@ -168,6 +170,9 @@ class AuthController {
      * Déconnecte l'utilisateur
      */
     public function logout() {
+        // Log de débogage pour voir quel utilisateur est déconnecté
+        $user = Auth::getCurrentUser();
+        
         // Supprimer le cookie JWT
         Auth::removeTokenCookie();
         
@@ -182,14 +187,21 @@ class AuthController {
             }
         }
         
+        // Supprimer manuellement le cookie JWT côté client
+        setcookie('jwt_token', '', time() - 3600, '/', '', false, true);
+        unset($_COOKIE['jwt_token']);
+        
         // Empêcher la mise en cache de la redirection pour forcer un rafraîchissement complet
         header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
         header('Cache-Control: post-check=0, pre-check=0', false);
         header('Pragma: no-cache');
         header('Expires: 0');
         
+        // Forcer le navigateur à vider son cache en ajoutant un paramètre aléatoire
+        $cacheBuster = '?logout=' . time() . rand(1000, 9999);
+        
         // Rediriger vers la page de connexion
-        header('Location: /login');
+        header('Location: /login' . $cacheBuster);
         exit;
     }
     

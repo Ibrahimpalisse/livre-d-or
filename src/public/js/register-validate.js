@@ -1,13 +1,15 @@
 function showValidation(input, isValid, message) {
-    const feedback = document.getElementById(input.id + 'Error');
+    const errorElement = document.getElementById(input.id + 'Error');
+    if (!errorElement) return;
+    
     if (isValid) {
         input.classList.remove('is-invalid');
         input.classList.add('is-valid');
-        feedback.textContent = '';
+        errorElement.textContent = '';
     } else {
         input.classList.remove('is-valid');
         input.classList.add('is-invalid');
-        feedback.textContent = message;
+        errorElement.textContent = message;
     }
 }
 
@@ -43,38 +45,34 @@ document.addEventListener('DOMContentLoaded', function () {
     // Validation en temps réel du nom d'utilisateur
     usernameInput.addEventListener('input', function() {
         const username = usernameInput.value.trim();
-        const usernameError = document.getElementById('usernameError');
         
         if (username === '') {
-            setInvalid(usernameInput, usernameError, 'Le nom d\'utilisateur est requis.');
+            showValidation(usernameInput, false, 'Le nom d\'utilisateur est requis.');
         } else if (!usernameRegex.test(username)) {
-            setInvalid(usernameInput, usernameError, 'Le nom d\'utilisateur doit contenir entre 3 et 20 caractères alphanumériques.');
+            showValidation(usernameInput, false, 'Le nom d\'utilisateur doit contenir entre 3 et 20 caractères alphanumériques.');
         } else {
-            setValid(usernameInput, usernameError);
+            showValidation(usernameInput, true, '');
         }
     });
 
     // Validation en temps réel du mot de passe
     passwordInput.addEventListener('input', function() {
         const password = passwordInput.value;
-        const passwordError = document.getElementById('passwordError');
         
         if (password === '') {
-            setInvalid(passwordInput, passwordError, 'Le mot de passe est requis.');
+            showValidation(passwordInput, false, 'Le mot de passe est requis.');
         } else if (!passwordRegex.test(password)) {
-            setInvalid(passwordInput, passwordError, 'Le mot de passe doit contenir au moins 8 caractères, dont une majuscule, une minuscule et un chiffre.');
+            showValidation(passwordInput, false, 'Le mot de passe doit contenir au moins 8 caractères, dont une majuscule, une minuscule et un chiffre.');
         } else {
-            setValid(passwordInput, passwordError);
+            showValidation(passwordInput, true, '');
         }
         
         // Vérifier la correspondance avec la confirmation
         if (passwordConfirmInput.value !== '') {
-            const passwordConfirmError = document.getElementById('password_confirmError');
-            
             if (passwordConfirmInput.value !== password) {
-                setInvalid(passwordConfirmInput, passwordConfirmError, 'Les mots de passe ne correspondent pas.');
+                showValidation(passwordConfirmInput, false, 'Les mots de passe ne correspondent pas.');
             } else {
-                setValid(passwordConfirmInput, passwordConfirmError);
+                showValidation(passwordConfirmInput, true, '');
             }
         }
     });
@@ -83,14 +81,13 @@ document.addEventListener('DOMContentLoaded', function () {
     passwordConfirmInput.addEventListener('input', function() {
         const passwordConfirm = passwordConfirmInput.value;
         const password = passwordInput.value;
-        const passwordConfirmError = document.getElementById('password_confirmError');
         
         if (passwordConfirm === '') {
-            setInvalid(passwordConfirmInput, passwordConfirmError, 'La confirmation du mot de passe est requise.');
+            showValidation(passwordConfirmInput, false, 'La confirmation du mot de passe est requise.');
         } else if (passwordConfirm !== password) {
-            setInvalid(passwordConfirmInput, passwordConfirmError, 'Les mots de passe ne correspondent pas.');
+            showValidation(passwordConfirmInput, false, 'Les mots de passe ne correspondent pas.');
         } else {
-            setValid(passwordConfirmInput, passwordConfirmError);
+            showValidation(passwordConfirmInput, true, '');
         }
     });
 
@@ -158,7 +155,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                 const errorElement = document.getElementById(field + 'Error');
                                 
                                 if (input && errorElement) {
-                                    setInvalid(input, errorElement, data.errors[field]);
+                                    showValidation(input, false, data.errors[field]);
                                 }
                             });
                         }
@@ -175,23 +172,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
             }
         });
-    }
-
-    // Fonctions utilitaires
-    function setInvalid(input, errorElement, message) {
-        input.classList.add('is-invalid');
-        input.classList.remove('is-valid');
-        if (errorElement) {
-            errorElement.textContent = message;
-        }
-    }
-
-    function setValid(input, errorElement) {
-        input.classList.remove('is-invalid');
-        input.classList.add('is-valid');
-        if (errorElement) {
-            errorElement.textContent = '';
-        }
     }
 
     function showAlert(type, message) {
