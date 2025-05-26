@@ -717,8 +717,12 @@ document.addEventListener('DOMContentLoaded', function () {
             if (data.success) {
                 // Commentaire ajouté avec succès
                 if (callback) callback();
+                
                 // Mettre à jour les statistiques pour cette publication
                 loadCommentStats(publicationId);
+                
+                // Utiliser alert() au lieu de showToast qui cause des problèmes
+                // showToast('Commentaire ajouté avec succès!', 'success');
             } else {
                 // Erreur lors de l'ajout du commentaire
                 alert(data.message || 'Erreur lors de l\'ajout du commentaire.');
@@ -734,6 +738,7 @@ document.addEventListener('DOMContentLoaded', function () {
             } else {
                 alert(error.message || 'Une erreur est survenue lors de l\'ajout du commentaire.');
             }
+            
             // Toujours appeler le callback, même en cas d'erreur
             if (callback) callback();
         });
@@ -1101,12 +1106,6 @@ document.addEventListener('DOMContentLoaded', function () {
             body.textContent = content;
         }
         return modal;
-    }
-    
-    // Fonction de secours pour les anciens appels à showToast
-    function showToast(type, message) {
-        // Utilise simplement alert comme solution de secours
-        alert(message);
     }
 });
 

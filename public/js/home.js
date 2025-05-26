@@ -67,13 +67,18 @@ document.addEventListener('DOMContentLoaded', function () {
         
         // Montrer le spinner de chargement
         if (publicationsContainer) {
-            publicationsContainer.innerHTML = `
-                <div class="col-12 text-center py-5">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Chargement...</span>
-                    </div>
-                </div>
-            `;
+            publicationsContainer.textContent = '';
+            const spinnerCol = document.createElement('div');
+            spinnerCol.className = 'col-12 text-center py-5';
+            const spinner = document.createElement('div');
+            spinner.className = 'spinner-border text-primary';
+            spinner.setAttribute('role', 'status');
+            const span = document.createElement('span');
+            span.className = 'visually-hidden';
+            span.textContent = 'Chargement...';
+            spinner.appendChild(span);
+            spinnerCol.appendChild(spinner);
+            publicationsContainer.appendChild(spinnerCol);
         }
         
         // Construire l'URL de requête
@@ -90,16 +95,28 @@ document.addEventListener('DOMContentLoaded', function () {
         .then(data => {
             // Effacer le conteneur
             if (publicationsContainer) {
-                publicationsContainer.innerHTML = '';
+                publicationsContainer.textContent = '';
+                const spinnerCol = document.createElement('div');
+                spinnerCol.className = 'col-12 text-center py-5';
+                const spinner = document.createElement('div');
+                spinner.className = 'spinner-border text-primary';
+                spinner.setAttribute('role', 'status');
+                const span = document.createElement('span');
+                span.className = 'visually-hidden';
+                span.textContent = 'Chargement...';
+                spinner.appendChild(span);
+                spinnerCol.appendChild(spinner);
+                publicationsContainer.appendChild(spinnerCol);
                 
                 if (data.publications.length === 0) {
-                    publicationsContainer.innerHTML = `
-                        <div class="col-12">
-                            <div class="alert alert-info text-center">
-                                Aucune publication trouvée.
-                            </div>
-                        </div>
-                    `;
+                    publicationsContainer.textContent = '';
+                    const col = document.createElement('div');
+                    col.className = 'col-12';
+                    const alert = document.createElement('div');
+                    alert.className = 'alert alert-info text-center';
+                    alert.textContent = 'Aucune publication trouvée.';
+                    col.appendChild(alert);
+                    publicationsContainer.appendChild(col);
                     return;
                 }
                 
@@ -115,13 +132,14 @@ document.addEventListener('DOMContentLoaded', function () {
         })
         .catch(error => {
             if (publicationsContainer) {
-                publicationsContainer.innerHTML = `
-                    <div class="col-12">
-                        <div class="alert alert-danger text-center">
-                            Une erreur est survenue lors du chargement des publications.
-                        </div>
-                    </div>
-                `;
+                publicationsContainer.textContent = '';
+                const col = document.createElement('div');
+                col.className = 'col-12';
+                const alert = document.createElement('div');
+                alert.className = 'alert alert-danger text-center';
+                alert.textContent = 'Une erreur est survenue lors du chargement des publications.';
+                col.appendChild(alert);
+                publicationsContainer.appendChild(col);
             }
         });
     }
@@ -375,21 +393,10 @@ document.addEventListener('DOMContentLoaded', function () {
     function showLinksModal(publication) {
         // Vérifier si links existe et est un tableau
         const hasLinks = Array.isArray(publication.links) && publication.links.length > 0;
-        
-        const content = hasLinks 
-            ? `
-                <h6 class="mb-3">${publication.links.length} lien(s) disponible(s) :</h6>
-                <ul class="list-group">
-                    ${publication.links.map((link, index) => 
-                        `<li class="list-group-item">
-                            <span class="badge bg-primary me-2">${index + 1}</span>
-                            <a href="${link}" target="_blank" rel="noopener" class="text-break">${link}</a>
-                        </li>`
-                    ).join('')}
-                </ul>
-            `
-            : '<div class="alert alert-warning">Aucun lien disponible.</div>';
-        
+        const content = {
+            linksTitle: hasLinks ? `${publication.links.length} lien(s) disponible(s) :` : '',
+            links: hasLinks ? publication.links : []
+        };
         const modal = createModal('linksModal', `Liens pour lire "${publication.title}"`, content);
         const bsModal = new bootstrap.Modal(modal);
         bsModal.show();
@@ -692,14 +699,20 @@ document.addEventListener('DOMContentLoaded', function () {
             });
     }
     
+    // Fonction utilitaire pour sécuriser les headers avec le token CSRF
+    function getSecureHeaders() {
+        return {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {})
+        };
+    }
+    
     // Fonction pour soumettre un commentaire
     function submitComment(publicationId, content, callback) {
         fetch('/comments/add', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            },
+            headers: getSecureHeaders(),
             body: JSON.stringify({
                 publication_id: publicationId,
                 content: content
@@ -853,7 +866,7 @@ document.addEventListener('DOMContentLoaded', function () {
             validationMessage.innerHTML = `<div class="spinner-border text-primary" role="status"></div>`;
             const data = await fetchJson('/publication/validate', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                headers: getSecureHeaders(),
                 body: JSON.stringify({ publication_id: publicationId, isValid })
             });
             validationMessage.textContent = data.message || (isValid ? 'Publication validée !' : 'Publication non validée.');
@@ -1100,11 +1113,48 @@ document.addEventListener('DOMContentLoaded', function () {
         modal.querySelector('.modal-title').textContent = title;
         // Met à jour le contenu du corps
         const body = document.getElementById(`${id}Body`);
+        // Remplacement sécurisé de innerHTML
+        body.textContent = '';
         if (typeof content === 'string') {
-            // Si le contenu est du HTML complexe, on utilise innerHTML (ex: listes de liens, etc.)
-            body.innerHTML = content;
+            // Si le contenu est du HTML simple (ex: liste de liens), on le parse de façon sécurisée
+            // On va créer les éléments DOM à la main
+            if (id === 'linksModal') {
+                // Créer le titre
+                const h6 = document.createElement('h6');
+                h6.className = 'mb-3';
+                h6.textContent = content.linksTitle || '';
+                body.appendChild(h6);
+                if (Array.isArray(content.links) && content.links.length > 0) {
+                    const ul = document.createElement('ul');
+                    ul.className = 'list-group';
+                    content.links.forEach((link, index) => {
+                        const li = document.createElement('li');
+                        li.className = 'list-group-item';
+                        const badge = document.createElement('span');
+                        badge.className = 'badge bg-primary me-2';
+                        badge.textContent = (index + 1).toString();
+                        const a = document.createElement('a');
+                        a.href = link;
+                        a.target = '_blank';
+                        a.rel = 'noopener';
+                        a.className = 'text-break';
+                        a.textContent = link;
+                        li.appendChild(badge);
+                        li.appendChild(a);
+                        ul.appendChild(li);
+                    });
+                    body.appendChild(ul);
+                } else {
+                    const alert = document.createElement('div');
+                    alert.className = 'alert alert-warning';
+                    alert.textContent = 'Aucun lien disponible.';
+                    body.appendChild(alert);
+                }
+            } else {
+                // Pour les autres modales, on affiche le texte brut
+                body.textContent = content;
+            }
         } else if (content instanceof Node) {
-            body.textContent = '';
             body.appendChild(content);
         } else {
             body.textContent = content;
