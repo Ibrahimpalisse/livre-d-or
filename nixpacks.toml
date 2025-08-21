@@ -1,6 +1,5 @@
 [phases.setup]
 nixPkgs = [
-  "php82",
   "(php82.withExtensions (pe: pe.enabled ++ [pe.mongodb]))",
   "nginx", 
   "libmysqlclient",
@@ -8,6 +7,10 @@ nixPkgs = [
   "nodejs_18",
   "npm-9_x"
 ]
+
+[variables]
+NIXPACKS_PHP_ROOT_DIR = "/app"
+NIXPACKS_PHP_FALLBACK_PATH = "/app/index.php"
 
 [phases.install]
 cmds = [

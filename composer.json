@@ -1,5 +1,7 @@
 {
     "require": {
+        "php": "^8.2",
+        "ext-mongodb": "*",
         "mongodb/mongodb": "^2.0",
         "firebase/php-jwt": "^6.11",
         "aws/aws-sdk-php": "^3.356"
