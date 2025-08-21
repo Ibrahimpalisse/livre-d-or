@@ -8,10 +8,6 @@ nixPkgs = [
   "npm-9_x"
 ]
 
-[variables]
-NIXPACKS_PHP_ROOT_DIR = "/app"
-NIXPACKS_PHP_FALLBACK_PATH = "/app/index.php"
-
 [phases.install]
 cmds = [
   "mkdir -p /var/log/nginx && mkdir -p /var/cache/nginx",
@@ -23,3 +19,5 @@ cmd = "node /assets/scripts/prestart.mjs /assets/nginx.template.conf /nginx.conf
 
 [variables]
 PHP_VERSION = "8.3"
+NIXPACKS_PHP_ROOT_DIR = "/app"
+NIXPACKS_PHP_FALLBACK_PATH = "/app/index.php"
