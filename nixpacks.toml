@@ -1,0 +1,22 @@
+[phases.setup]
+nixPkgs = [
+  "php82",
+  "(php82.withExtensions (pe: pe.enabled ++ [pe.mongodb]))",
+  "nginx", 
+  "libmysqlclient",
+  "php82Packages.composer",
+  "nodejs_18",
+  "npm-9_x"
+]
+
+[phases.install]
+cmds = [
+  "mkdir -p /var/log/nginx && mkdir -p /var/cache/nginx",
+  "composer install --ignore-platform-reqs"
+]
+
+[phases.start]
+cmd = "node /assets/scripts/prestart.mjs /assets/nginx.template.conf /nginx.conf && (php-fpm -y /assets/php-fpm.conf & nginx -c /nginx.conf)"
+
+[variables]
+PHP_VERSION = "8.2"

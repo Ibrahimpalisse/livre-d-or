@@ -1,0 +1,18 @@
+VARIABLES À CORRIGER DANS RAILWAY:
+
+❌ PROBLEMATIQUE:
+APP_NAME=""Livre d'or""
+
+✅ CORRECTION:
+APP_NAME=Livre d'or
+
+❌ PROBLEMATIQUE:  
+APP_URL="https://livre-d-or-production.up.railway.app/"
+
+✅ CORRECTION:
+APP_URL=https://livre-d-or-production.up.railway.app
+
+INSTRUCTIONS:
+1. Aller dans Railway > Variables
+2. Modifier APP_NAME: enlever les doubles quotes
+3. Modifier APP_URL: enlever les quotes et le slash final
