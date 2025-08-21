@@ -2,27 +2,46 @@
 // Démarrer la session
 session_start();
 
-// Activer l'affichage des erreurs pour le débogage
+// Mode debug strict
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
+ini_set('log_errors', 1);
 
 // Journalisation
-error_log("Début de l'exécution de index.php - REQUEST_URI: " . $_SERVER['REQUEST_URI']);
+error_log("🔍 Index.php - Début de l'exécution - REQUEST_URI: " . $_SERVER['REQUEST_URI']);
 
-// Vérifier si mod_rewrite fonctionne correctement
-if (!isset($_SERVER['REDIRECT_URL']) && $_SERVER['REQUEST_URI'] != '/' && $_SERVER['REQUEST_URI'] != '/index.php') {
-    error_log("ATTENTION: mod_rewrite ne semble pas fonctionner! REQUEST_URI: " . $_SERVER['REQUEST_URI']);
+try {
+    error_log("🔍 Index.php - Avant autoload");
+    require 'vendor/autoload.php';
+    error_log("🔍 Index.php - Autoload OK");
+
+    // Charger les variables d'environnement AVANT tout le reste
+    use Core\Env;
+    use Core\Router;
+    use Core\Auth;
+    use Controllers\AuthController;
+    use Models\User;
+
+    error_log("🔍 Index.php - Avant Env::load");
+    Env::load();
+    error_log("🔍 Index.php - Env::load OK");
+
+    error_log("🔍 Index.php - Avant Router");
+    $router = new Router();
+    error_log("🔍 Index.php - Router OK");
+    
+} catch (Throwable $e) {
+    error_log("🚨 ERREUR FATALE dans index.php: " . $e->getMessage() . " dans " . $e->getFile() . " ligne " . $e->getLine());
+    http_response_code(500);
+    echo "<h1>🚨 ERREUR FATALE</h1>";
+    echo "<p><strong>Message:</strong> " . $e->getMessage() . "</p>";
+    echo "<p><strong>Fichier:</strong> " . $e->getFile() . "</p>";
+    echo "<p><strong>Ligne:</strong> " . $e->getLine() . "</p>";
+    echo "<h3>Stack Trace:</h3>";
+    echo "<pre>" . $e->getTraceAsString() . "</pre>";
+    exit;
 }
-
-require 'vendor/autoload.php';
-
-use Core\Router;
-use Core\Auth;
-use Controllers\AuthController;
-use Models\User;
-
-$router = new Router();
 
 // Exemple de route pour la page d'accueil
 $router->add('/', function() use ($router) {
