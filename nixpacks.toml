@@ -1,6 +1,6 @@
 [phases.setup]
 nixPkgs = [
-  "(php83.withExtensions (pe: pe.enabled ++ [pe.mongo]))",
+  "php83",
   "nginx", 
   "libmysqlclient",
   "php83Packages.composer",

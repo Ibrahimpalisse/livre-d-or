@@ -6,19 +6,27 @@ class Database {
     private $client;
     private $db;
     private $mongoHandler;
+    private $httpHandler;
+    private $isUsingHTTP = false;
 
     private function __construct() {
-        // Utiliser le handler MongoDB intelligent
+        // Tenter d'abord le MongoDB natif
         $this->mongoHandler = DatabaseMongoDB::getInstance();
         
         if (!$this->mongoHandler->isAvailable()) {
-            error_log('❌ ERREUR CRITIQUE: MongoDB non disponible sur Railway');
-            error_log('🔧 SOLUTION: Railway doit installer l\'extension MongoDB');
-            error_log('📋 Extensions disponibles: ' . implode(', ', get_loaded_extensions()));
-            throw new \Exception('MongoDB extension non disponible sur Railway');
+            error_log('⚠️ MongoDB extension non disponible sur Railway');
+            error_log('🔄 Fallback: Utilisation de l\'API HTTP MongoDB Atlas');
+            error_log('📋 Extensions PHP disponibles: ' . implode(', ', get_loaded_extensions()));
+            
+            // Utiliser le fallback HTTP
+            $this->httpHandler = DatabaseHTTP::getInstance();
+            $this->isUsingHTTP = true;
+            error_log('✅ Fallback HTTP MongoDB Atlas activé');
+            return;
         }
         
         $this->db = $this->mongoHandler->getDatabase();
+        $this->isUsingHTTP = false;
         
         // Si MONGO_URI n'est pas défini, construire l'URI à partir des paramètres de configuration
         if (!$mongoUri) {
@@ -55,6 +63,9 @@ class Database {
     }
 
     public function getCollection($collection) {
+        if ($this->isUsingHTTP) {
+            return $this->httpHandler->getCollection($collection);
+        }
         return $this->db->$collection;
     }
 } 
