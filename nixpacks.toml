@@ -1,5 +1,5 @@
 [phases.setup]
-nixPkgs = ["php83", "nginx"]
+nixPkgs = ["php83", "nginx", "php83Packages.composer"]
 
 [phases.install]
 cmds = ["composer install --no-dev --ignore-platform-reqs"]
