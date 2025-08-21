@@ -1,9 +1,9 @@
 [phases.setup]
 nixPkgs = [
-  "(php82.withExtensions (pe: pe.enabled ++ [pe.mongodb]))",
+  "(php83.withExtensions (pe: pe.enabled ++ [pe.mongodb]))",
   "nginx", 
   "libmysqlclient",
-  "php82Packages.composer",
+  "php83Packages.composer",
   "nodejs_18",
   "npm-9_x"
 ]
@@ -22,4 +22,4 @@ cmds = [
 cmd = "node /assets/scripts/prestart.mjs /assets/nginx.template.conf /nginx.conf && (php-fpm -y /assets/php-fpm.conf & nginx -c /nginx.conf)"
 
 [variables]
-PHP_VERSION = "8.2"
+PHP_VERSION = "8.3"

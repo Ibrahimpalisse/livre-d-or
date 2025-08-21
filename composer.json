@@ -1,6 +1,6 @@
 {
     "require": {
-        "php": "^8.2",
+        "php": "^8.3",
         "ext-mongodb": "*",
         "mongodb/mongodb": "^2.0",
         "firebase/php-jwt": "^6.11",
