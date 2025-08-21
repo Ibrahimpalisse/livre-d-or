@@ -11,14 +11,14 @@ class DatabaseHTTP {
     private $database;
     
     private function __construct() {
-        $this->database = $_ENV['MONGODB_DATABASE'] ?? 'livre_d_or';
+        // Utiliser Railway database ou fallback
+        $this->database = $_ENV['MONGODB_DATABASE'] ?? 'railway';
         
-        // Construire l'URL de l'API MongoDB Atlas
-        $cluster = $_ENV['MONGODB_HOST'] ?? '';
-        $username = $_ENV['MONGODB_USERNAME'] ?? '';
-        $password = $_ENV['MONGODB_PASSWORD'] ?? '';
+        // Note: Ce fallback HTTP n'est plus nécessaire avec Railway MongoDB
+        // Mais gardé pour compatibilité si jamais Railway MongoDB échoue
+        error_log('⚠️ DatabaseHTTP utilisé - Railway MongoDB devrait être disponible normalement');
         
-        // MongoDB Atlas Data API endpoint
+        // MongoDB Atlas Data API endpoint (fallback uniquement)
         $this->baseUrl = "https://data.mongodb-api.com/app/data-xvlcm/endpoint/data/v1";
         
         $this->headers = [

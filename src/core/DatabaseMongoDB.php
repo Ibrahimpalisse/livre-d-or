@@ -36,10 +36,23 @@ class DatabaseMongoDB {
         }
         
         try {
-            // Tenter de créer une connexion MongoDB
-            $mongoUri = $_ENV['MONGO_URI'] ?? '';
+            // Prioriser les variables Railway si disponibles
+            $mongoUri = $_ENV['MONGO_URL'] ?? $_ENV['MONGO_URI'] ?? '';
+            
+            // Si pas d'URI complet, construire avec les variables Railway
+            if (empty($mongoUri) && isset($_ENV['MONGOHOST'])) {
+                $host = $_ENV['MONGOHOST'];
+                $port = $_ENV['MONGOPORT'] ?? '27017';
+                $user = $_ENV['MONGOUSER'] ?? 'mongo';
+                $pass = $_ENV['MONGOPASSWORD'] ?? '';
+                $database = $_ENV['MONGODB_DATABASE'] ?? 'railway';
+                
+                $mongoUri = "mongodb://$user:$pass@$host:$port/$database";
+                error_log("🔧 URI MongoDB Railway construite: mongodb://$user:***@$host:$port/$database");
+            }
+            
             if (empty($mongoUri)) {
-                throw new \Exception('MONGO_URI non défini');
+                throw new \Exception('Aucune URI MongoDB disponible (ni MONGO_URL ni variables Railway)');
             }
             
             $this->connection = new \MongoDB\Client($mongoUri, [
