@@ -1,20 +1,24 @@
 <?php
 namespace Core;
 
-use MongoDB\Client;
-
 class Database {
     private static $instance = null;
     private $client;
     private $db;
+    private $mongoHandler;
 
     private function __construct() {
-        // Charger la configuration
-        $config = include dirname(__DIR__) . '/config/config.php';
-        $mongoConfig = $config['mongodb'];
+        // Utiliser le handler MongoDB intelligent
+        $this->mongoHandler = DatabaseMongoDB::getInstance();
         
-        // Vérifier d'abord si MONGO_URI est défini dans l'environnement
-        $mongoUri = getenv('MONGO_URI');
+        if (!$this->mongoHandler->isAvailable()) {
+            error_log('❌ ERREUR CRITIQUE: MongoDB non disponible sur Railway');
+            error_log('🔧 SOLUTION: Railway doit installer l\'extension MongoDB');
+            error_log('📋 Extensions disponibles: ' . implode(', ', get_loaded_extensions()));
+            throw new \Exception('MongoDB extension non disponible sur Railway');
+        }
+        
+        $this->db = $this->mongoHandler->getDatabase();
         
         // Si MONGO_URI n'est pas défini, construire l'URI à partir des paramètres de configuration
         if (!$mongoUri) {

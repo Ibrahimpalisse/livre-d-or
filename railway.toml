@@ -1,0 +1,9 @@
+[build]
+builder = "nixpacks"
+
+[build.nixpacksConfig]
+nixpkgs = ["(php83.withExtensions (pe: pe.enabled ++ [pe.mongodb]))", "nginx", "libmysqlclient", "php83Packages.composer"]
+
+[deploy]
+healthcheckPath = "/test.php"
+healthcheckTimeout = 30
