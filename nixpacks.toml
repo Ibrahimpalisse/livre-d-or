@@ -4,5 +4,8 @@ nixPkgs = ["php83", "nginx", "php83Packages.composer"]
 [phases.install]
 cmds = ["composer install --no-dev --ignore-platform-reqs"]
 
+[phases.start]
+cmd = "php -S 0.0.0.0:$PORT -t /app"
+
 [variables]
 PHP_VERSION = "8.3"
