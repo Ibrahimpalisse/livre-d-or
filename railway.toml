@@ -1,10 +1,2 @@
 [build]
 builder = "nixpacks"
-
-[build.nixpacksConfig]
-nixpkgs = ["php83", "nginx", "libmysqlclient", "php83Packages.composer"]
-
-[deploy]
-# Suppression du health check personnalisé pour éviter les redémarrages
-# healthcheckPath = "/test.php"
-# healthcheckTimeout = 30
