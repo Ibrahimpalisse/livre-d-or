@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', function () {
         
         if (searchInput) searchInput.value = search;
         
-        // Montrer le spinner de chargement
+        // Montrer le spinner de chargement (uniquement ici)
         if (publicationsContainer) {
             publicationsContainer.textContent = '';
             const spinnerCol = document.createElement('div');
@@ -93,23 +93,10 @@ document.addEventListener('DOMContentLoaded', function () {
         })
         .then(response => response.json())
         .then(data => {
-            // Effacer le conteneur
+            // Effacer le conteneur (supprime le spinner)
             if (publicationsContainer) {
                 publicationsContainer.textContent = '';
-                const spinnerCol = document.createElement('div');
-                spinnerCol.className = 'col-12 text-center py-5';
-                const spinner = document.createElement('div');
-                spinner.className = 'spinner-border text-primary';
-                spinner.setAttribute('role', 'status');
-                const span = document.createElement('span');
-                span.className = 'visually-hidden';
-                span.textContent = 'Chargement...';
-                spinner.appendChild(span);
-                spinnerCol.appendChild(spinner);
-                publicationsContainer.appendChild(spinnerCol);
-                
                 if (data.publications.length === 0) {
-                    publicationsContainer.textContent = '';
                     const col = document.createElement('div');
                     col.className = 'col-12';
                     const alert = document.createElement('div');
@@ -119,13 +106,11 @@ document.addEventListener('DOMContentLoaded', function () {
                     publicationsContainer.appendChild(col);
                     return;
                 }
-                
                 // Générer les cartes de publications
                 data.publications.forEach(publication => {
                     const card = createPublicationCard(publication);
                     publicationsContainer.appendChild(card);
                 });
-                
                 // Générer la pagination
                 generatePagination(data.pagination, params);
             }
@@ -598,32 +583,33 @@ document.addEventListener('DOMContentLoaded', function () {
         if (isUserAuthenticated) {
             const commentForm = document.getElementById('commentForm');
             const submitButton = document.getElementById('submitComment');
-            
-            commentForm.onsubmit = function(e) {
-                e.preventDefault();
-                const content = document.getElementById('commentContent').value.trim();
-                if (content) {
-                    submitButton.disabled = true;
-                    submitButton.textContent = '';
-                    const spinner = document.createElement('span');
-                    spinner.className = 'spinner-border spinner-border-sm';
-                    spinner.setAttribute('role', 'status');
-                    spinner.setAttribute('aria-hidden', 'true');
-                    submitButton.appendChild(spinner);
-                    submitButton.appendChild(document.createTextNode(' Envoi...'));
-                    submitComment(publication.id, content, function() {
-                        // Toujours rechercher le bouton par son ID (au cas où le DOM a changé)
-                        const btn = document.getElementById('submitComment');
-                        if (btn) {
-                            btn.disabled = false;
-                            btn.textContent = 'Publier';
-                        }
-                        const textarea = document.getElementById('commentContent');
-                        if (textarea) textarea.value = '';
-                        loadComments(publication.id);
-                    });
-                }
-            };
+            if (commentForm && submitButton) {
+                commentForm.onsubmit = function(e) {
+                    e.preventDefault();
+                    const content = document.getElementById('commentContent').value.trim();
+                    if (content) {
+                        submitButton.disabled = true;
+                        submitButton.textContent = '';
+                        const spinner = document.createElement('span');
+                        spinner.className = 'spinner-border spinner-border-sm';
+                        spinner.setAttribute('role', 'status');
+                        spinner.setAttribute('aria-hidden', 'true');
+                        submitButton.appendChild(spinner);
+                        submitButton.appendChild(document.createTextNode(' Envoi...'));
+                        submitComment(publication.id, content, function() {
+                            // Toujours rechercher le bouton par son ID (au cas où le DOM a changé)
+                            const btn = document.getElementById('submitComment');
+                            if (btn) {
+                                btn.disabled = false;
+                                btn.textContent = 'Publier';
+                            }
+                            const textarea = document.getElementById('commentContent');
+                            if (textarea) textarea.value = '';
+                            loadComments(publication.id);
+                        });
+                    }
+                };
+            }
         }
         
         // Afficher la modale
@@ -1113,47 +1099,44 @@ document.addEventListener('DOMContentLoaded', function () {
         modal.querySelector('.modal-title').textContent = title;
         // Met à jour le contenu du corps
         const body = document.getElementById(`${id}Body`);
-        // Remplacement sécurisé de innerHTML
         body.textContent = '';
-        if (typeof content === 'string') {
-            // Si le contenu est du HTML simple (ex: liste de liens), on le parse de façon sécurisée
-            // On va créer les éléments DOM à la main
-            if (id === 'linksModal') {
-                // Créer le titre
-                const h6 = document.createElement('h6');
-                h6.className = 'mb-3';
-                h6.textContent = content.linksTitle || '';
-                body.appendChild(h6);
-                if (Array.isArray(content.links) && content.links.length > 0) {
-                    const ul = document.createElement('ul');
-                    ul.className = 'list-group';
-                    content.links.forEach((link, index) => {
-                        const li = document.createElement('li');
-                        li.className = 'list-group-item';
-                        const badge = document.createElement('span');
-                        badge.className = 'badge bg-primary me-2';
-                        badge.textContent = (index + 1).toString();
-                        const a = document.createElement('a');
-                        a.href = link;
-                        a.target = '_blank';
-                        a.rel = 'noopener';
-                        a.className = 'text-break';
-                        a.textContent = link;
-                        li.appendChild(badge);
-                        li.appendChild(a);
-                        ul.appendChild(li);
-                    });
-                    body.appendChild(ul);
-                } else {
-                    const alert = document.createElement('div');
-                    alert.className = 'alert alert-warning';
-                    alert.textContent = 'Aucun lien disponible.';
-                    body.appendChild(alert);
-                }
+        if (id === 'linksModal' && typeof content === 'object') {
+            // Créer le titre
+            const h6 = document.createElement('h6');
+            h6.className = 'mb-3';
+            h6.textContent = content.linksTitle || '';
+            body.appendChild(h6);
+            if (Array.isArray(content.links) && content.links.length > 0) {
+                const ul = document.createElement('ul');
+                ul.className = 'list-group';
+                content.links.forEach((link, index) => {
+                    const li = document.createElement('li');
+                    li.className = 'list-group-item';
+                    const badge = document.createElement('span');
+                    badge.className = 'badge bg-primary me-2';
+                    badge.textContent = (index + 1).toString();
+                    const a = document.createElement('a');
+                    a.href = link;
+                    a.target = '_blank';
+                    a.rel = 'noopener';
+                    a.className = 'text-break';
+                    a.textContent = link;
+                    li.appendChild(badge);
+                    li.appendChild(a);
+                    ul.appendChild(li);
+                });
+                body.appendChild(ul);
             } else {
-                // Pour les autres modales, on affiche le texte brut
-                body.textContent = content;
+                const alert = document.createElement('div');
+                alert.className = 'alert alert-warning';
+                alert.textContent = 'Aucun lien disponible.';
+                body.appendChild(alert);
             }
+        } else if (typeof content === 'string' && content.trim().startsWith('<')) {
+            // Si le contenu est du HTML (ex: modale image ou validation), on l'affiche en HTML (en s'assurant que le contenu est sûr)
+            body.innerHTML = content;
+        } else if (typeof content === 'string') {
+            body.textContent = content;
         } else if (content instanceof Node) {
             body.appendChild(content);
         } else {

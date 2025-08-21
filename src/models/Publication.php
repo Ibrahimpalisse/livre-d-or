@@ -3,22 +3,22 @@ namespace Models;
 
 use Core\Database;
 use Core\Env;
+use Core\S3Service;
 use MongoDB\BSON\ObjectId;
 use MongoDB\BSON\UTCDateTime;
 
 class Publication {
     private $collection;
+    private $s3Service;
     
     // Types de publications valides
     const TYPE_ROMAN = 'roman';
     const TYPE_MANHWA = 'manhwa'; 
     const TYPE_ANIME = 'anime';
     
-    // Dossier pour stocker les images
-    const UPLOAD_DIR = '/public/uploads/publications/';
-    
     public function __construct() {
         $this->collection = Database::getInstance()->getCollection('publications');
+        $this->s3Service = new S3Service();
     }
     
     /**
@@ -46,7 +46,7 @@ class Publication {
         
         // Traiter l'image si elle existe
         if (!empty($image) && $image['error'] === UPLOAD_ERR_OK) {
-            $imagePath = $this->saveImage($image);
+            $imagePath = $this->saveImageToS3($image);
             if (!$imagePath) {
                 return null; // Erreur lors de l'enregistrement de l'image
             }
@@ -72,32 +72,43 @@ class Publication {
     }
     
     /**
-     * Sauvegarde une image téléchargée
+     * Sauvegarde une image sur AWS S3
      * 
      * @param array $image Les données de l'image ($_FILES['image'])
-     * @return string|null Le chemin relatif de l'image ou null en cas d'erreur
+     * @return string|null L'URL S3 de l'image ou null en cas d'erreur
      */
-    private function saveImage($image) {
-        // Vérifier que le dossier d'upload existe, sinon le créer
-        $uploadDir = dirname(dirname(__DIR__)) . self::UPLOAD_DIR;
-        if (!file_exists($uploadDir)) {
-            if (!mkdir($uploadDir, 0755, true)) {
-                return null;
-            }
+    private function saveImageToS3($image) {
+        // Vérifier que le fichier est une image valide
+        $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mimeType = finfo_file($finfo, $image['tmp_name']);
+        finfo_close($finfo);
+        
+        if (!in_array($mimeType, $allowedTypes)) {
+            error_log('Type de fichier non autorisé: ' . $mimeType);
+            return null;
         }
         
-        // Générer un nom unique pour l'image
-        $extension = pathinfo($image['name'], PATHINFO_EXTENSION);
-        $filename = uniqid('pub_') . '.' . $extension;
-        $targetPath = $uploadDir . $filename;
-        
-        // Déplacer l'image vers le dossier d'upload
-        if (move_uploaded_file($image['tmp_name'], $targetPath)) {
-            return self::UPLOAD_DIR . $filename; // Chemin relatif pour la BD
+        // Lire le contenu du fichier
+        $fileContent = file_get_contents($image['tmp_name']);
+        if ($fileContent === false) {
+            error_log('Impossible de lire le fichier image');
+            return null;
         }
         
+        // Upload vers S3
+        $imageUrl = $this->s3Service->uploadImage($fileContent, $image['name']);
+        
+        if ($imageUrl) {
+            error_log('Image uploadée avec succès vers S3: ' . $imageUrl);
+            return $imageUrl;
+        }
+        
+        error_log('Échec de l\'upload vers S3');
         return null;
     }
+    
+
     
     /**
      * Récupère une publication par son ID

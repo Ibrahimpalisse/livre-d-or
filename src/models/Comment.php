@@ -21,7 +21,7 @@ class Comment {
      * @param string $content Contenu du commentaire
      * @return array|null Le commentaire créé ou null en cas d'erreur
      */
-    public function create($publicationId, $userId, $username, $content) {
+    public function create(string $publicationId, string $userId, string $username, string $content): ?array {
         try {
             $result = $this->collection->insertOne([
                 'publication_id' => new ObjectId($publicationId),
@@ -49,7 +49,7 @@ class Comment {
      * @param string $id ID du commentaire
      * @return array|null Le commentaire ou null s'il n'existe pas
      */
-    public function findById($id) {
+    public function findById(string $id): ?array {
         try {
             // Vérifier que l'ID est un ObjectId valide
             if (!preg_match('/^[a-f\d]{24}$/i', $id)) {
@@ -74,7 +74,7 @@ class Comment {
      * @param string $publicationId ID de la publication
      * @return array Les commentaires
      */
-    public function findByPublicationId($publicationId) {
+    public function findByPublicationId(string $publicationId): array {
         try {
             $comments = [];
             $cursor = $this->collection->find(
@@ -100,7 +100,7 @@ class Comment {
      * @param bool $isLike true pour like, false pour dislike
      * @return bool Succès ou échec
      */
-    public function addReaction($id, $isLike = true) {
+    public function addReaction(string $id, bool $isLike = true): bool {
         try {
             // Vérifier que l'ID est un ObjectId valide
             if (!preg_match('/^[a-f\d]{24}$/i', $id)) {
@@ -126,34 +126,12 @@ class Comment {
     }
     
     /**
-     * Supprime un commentaire
-     * 
-     * @param string $id ID du commentaire
-     * @param string $userId ID de l'utilisateur (pour vérification)
-     * @return bool Succès ou échec
-     */
-    public function delete($id, $userId) {
-        try {
-            // Seul l'auteur du commentaire peut le supprimer
-            $result = $this->collection->deleteOne([
-                '_id' => new ObjectId($id),
-                'user_id' => new ObjectId($userId)
-            ]);
-            
-            return $result->getDeletedCount() > 0;
-        } catch (\Exception $e) {
-            error_log('Erreur lors de la suppression du commentaire: ' . $e->getMessage());
-            return false;
-        }
-    }
-    
-    /**
      * Formate un commentaire pour l'affichage
      * 
      * @param object $comment Commentaire de MongoDB
      * @return array Commentaire formaté
      */
-    private function formatComment($comment) {
+    private function formatComment(object $comment): array {
         return [
             'id' => (string) $comment->_id,
             'publication_id' => (string) $comment->publication_id,

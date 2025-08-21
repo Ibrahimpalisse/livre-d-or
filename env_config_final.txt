@@ -1,0 +1,21 @@
+# Configuration FINALE pour la production - Hostinger + MongoDB Atlas
+
+
+
+# Configuration MongoDB Atlas - VOS VRAIES INFORMATIONS
+MONGODB_HOST=cluster0.bqi0xgd.mongodb.net
+MONGODB_PORT=27017
+MONGODB_DATABASE=livre_d_or
+MONGODB_USERNAME=ibrahimvignes
+MONGODB_PASSWORD=gyPi3qjuLynoZLJ
+
+# Configuration JWT pour l'authentification
+JWT_SECRET=VotreCleSecreteTresLongueEtSecurisee32CaracteresMinimum2024
+JWT_ALGORITHM=HS256
+JWT_EXPIRATION=3600
+
+# URI MongoDB Atlas COMPLETE avec vos vraies informations
+MONGO_URI=mongodb+srv://ibrahimvignes:gyPi3qjuLynoZLJ@cluster0.bqi0xgd.mongodb.net/livre_d_or?retryWrites=true&w=majority
+
+# Configuration spécifique Hostinger
+HOSTINGER_ENV=production

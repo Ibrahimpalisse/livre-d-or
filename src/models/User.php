@@ -91,11 +91,15 @@ class User {
      * Met à jour le rôle d'un utilisateur
      */
     public function updateRole($userId, $role) {
+        $user = $this->findById($userId);
+        if ($user && $user->role === self::ROLE_SUPER_ADMIN) {
+            // Empêcher de changer le rôle du super_admin
+            return false;
+        }
         $result = $this->collection->updateOne(
             ['_id' => new ObjectId($userId)],
             ['$set' => ['role' => $role]]
         );
-        
         return $result->getModifiedCount() > 0;
     }
     

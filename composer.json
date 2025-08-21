@@ -1,7 +1,8 @@
 {
     "require": {
         "mongodb/mongodb": "^2.0",
-        "firebase/php-jwt": "^6.11"
+        "firebase/php-jwt": "^6.11",
+        "aws/aws-sdk-php": "^3.356"
     },
    "autoload": {
     "psr-4": {
@@ -12,5 +13,8 @@
     "files": [
         "src/core/helpers.php"
     ]
-}
+},
+    "require-dev": {
+        "phpunit/phpunit": "^11.5"
+    }
 }
